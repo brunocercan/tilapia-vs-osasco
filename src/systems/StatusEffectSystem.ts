@@ -43,6 +43,13 @@ export class StatusEffectSystem {
     fighter.statusEffects.splice(index, 1);
   }
 
+  /** Remove todos os efeitos, revertendo modificadores (usado ao renascer). */
+  static clearEffects(fighter: Fighter): void {
+    for (let i = fighter.statusEffects.length - 1; i >= 0; i--) {
+      StatusEffectSystem.removeEffect(fighter, i);
+    }
+  }
+
   update(fighters: readonly Fighter[], deltaSeconds: number, onTick?: (event: StatusTickEvent) => void): void {
     for (const fighter of fighters) {
       if (!fighter.alive) {

@@ -6,7 +6,8 @@ const HOW_TO_PLAY_ITEMS: readonly string[] = [
   'Vença os inimigos de cada fase e derrote o boss.',
   'A cada boss derrotado, escolha 1 entre 2 equipamentos.',
   'Sobreviva às 3 fases: Matão, Ruas de Osasco e Toca.',
-  'Quanto mais rápida a run, maior a pontuação no ranking!',
+  'Pontos só por inimigos derrotados: quanto mais tempo vivo, maior o multiplicador!',
+  'Ao subir de nível, o time cura por completo — e um personagem morto renasce!',
 ];
 
 /** Tela "Como Jogar" (SPEC-JOGO §12/§13). */

@@ -6,54 +6,57 @@ import { BALANCE } from '../src/data/balance';
 const BASE_INPUT = {
   kills: 0,
   bossKills: 0,
-  level: 1,
-  survivors: 0,
-  phasesCompleted: 0,
   elapsedSeconds: 300,
-  phaseScoreBonusPercent: 0,
+  killScoreBonusPercent: 0,
 };
 
-describe('ScoreSystem (SPEC-JOGO §10)', () => {
-  it('soma todos os componentes da pontuação', () => {
+describe('ScoreSystem (SPEC-JOGO §10 — inimigos × sobrevivência)', () => {
+  it('pontação vem só de inimigos derrotados × multiplicador', () => {
     const breakdown = ScoreSystem.calculate({
       kills: 20,        // 200
       bossKills: 2,     // 300
-      level: 5,         // 125
-      survivors: 2,     // 100
-      phasesCompleted: 2, // 200
-      elapsedSeconds: 250, // (300-250)*4 = 200
-      phaseScoreBonusPercent: 0,
+      elapsedSeconds: 300, // ×1,5 (5 min vivos)
+      killScoreBonusPercent: 0,
     });
-    expect(breakdown.total).toBe(200 + 300 + 125 + 100 + 200 + 200);
+    expect(breakdown.enemies).toBe(200);
+    expect(breakdown.bosses).toBe(300);
+    expect(breakdown.multiplier).toBe(1.5);
+    expect(breakdown.total).toBe(Math.round((200 + 300) * 1.5));
   });
 
-  it('run completa dentro do alvo gera bônus de velocidade', () => {
-    const breakdown = ScoreSystem.calculate({ ...BASE_INPUT, elapsedSeconds: 270 });
-    expect(breakdown.speed).toBe(30 * BALANCE.score.speedBonusPerSecond);
+  it('não há pontos por tempo, fases, nível ou sobreviventes', () => {
+    const breakdown = ScoreSystem.calculate({ ...BASE_INPUT, kills: 0, bossKills: 0 });
+    expect(breakdown.total).toBe(0); // tempo vivo sozinho não pontua
   });
 
-  it('sem avanço, run rápida não gera score alto (apenas bônus de velocidade moderado)', () => {
-    const weakFast = ScoreSystem.calculate({ ...BASE_INPUT, elapsedSeconds: 60 });
+  it('multiplicador de sobrevivência cresce +0,1 por minuto vivo', () => {
+    expect(ScoreSystem.survivalMultiplier(0)).toBe(1);
+    expect(ScoreSystem.survivalMultiplier(60)).toBeCloseTo(1 + BALANCE.score.survivalMultiplierPerMinute, 2);
+    expect(ScoreSystem.survivalMultiplier(300)).toBe(1.5); // 5 min
+    expect(ScoreSystem.survivalMultiplier(600)).toBe(2.0); // 10 min
+  });
+
+  it('run com mais inimigos derrotados pontua mais que run rápida e fraca', () => {
+    const weakFast = ScoreSystem.calculate({ ...BASE_INPUT, kills: 5, bossKills: 0, elapsedSeconds: 60 });
     const complete = ScoreSystem.calculate({
-      kills: 30, bossKills: 3, level: 8, survivors: 2, phasesCompleted: 3,
-      elapsedSeconds: 250, phaseScoreBonusPercent: 0,
+      kills: 30, bossKills: 3, elapsedSeconds: 400, killScoreBonusPercent: 0,
     });
     expect(complete.total).toBeGreaterThan(weakFast.total);
-    expect(weakFast.total).toBeLessThanOrEqual(
-      LeaderboardService.MAX_PLAUSIBLE_SCORE,
-    );
+    expect(complete.total).toBeLessThanOrEqual(LeaderboardService.MAX_PLAUSIBLE_SCORE);
   });
 
-  it('bônus de velocidade nunca é negativo', () => {
-    const breakdown = ScoreSystem.calculate({ ...BASE_INPUT, elapsedSeconds: 600 });
-    expect(breakdown.speed).toBe(0);
+  it('sobreviver mais tempo multiplica a mesma pontuação', () => {
+    const curta = ScoreSystem.calculate({ ...BASE_INPUT, kills: 10, elapsedSeconds: 120 });
+    const longa = ScoreSystem.calculate({ ...BASE_INPUT, kills: 10, elapsedSeconds: 480 });
+    expect(longa.multiplier).toBeGreaterThan(curta.multiplier);
+    expect(longa.total).toBeGreaterThan(curta.total);
   });
 
-  it('Vale-Transporte aumenta em 10% a pontuação por fase concluída (§4)', () => {
-    const semVale = ScoreSystem.calculate({ ...BASE_INPUT, phasesCompleted: 2, phaseScoreBonusPercent: 0 });
-    const comVale = ScoreSystem.calculate({ ...BASE_INPUT, phasesCompleted: 2, phaseScoreBonusPercent: 10 });
-    expect(comVale.phases).toBe(Math.round(semVale.phases * 1.1));
-    expect(semVale.phases).toBe(2 * BALANCE.score.phaseClear);
+  it('Vale-Transporte aumenta em 10% a pontuação de inimigos derrotados (§4)', () => {
+    const semVale = ScoreSystem.calculate({ ...BASE_INPUT, kills: 20, killScoreBonusPercent: 0 });
+    const comVale = ScoreSystem.calculate({ ...BASE_INPUT, kills: 20, killScoreBonusPercent: 10 });
+    expect(comVale.enemies).toBe(Math.round(semVale.enemies * 1.1));
+    expect(semVale.enemies).toBe(20 * BALANCE.score.enemyKill);
   });
 });
 

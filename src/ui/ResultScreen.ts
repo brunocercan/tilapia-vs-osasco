@@ -93,14 +93,11 @@ export class ResultScreen extends BaseScreen {
 
     this.scoreElement.textContent = breakdown ? `Pontuação: ${breakdown.total}` : '';
 
-    const items: Array<[string, number]> = breakdown
+    const items: Array<[string, string]> = breakdown
       ? [
-          ['Inimigos derrotados', breakdown.enemies],
-          ['Bosses', breakdown.bosses],
-          ['Fases concluídas', breakdown.phases],
-          ['Bônus de nível', breakdown.level],
-          ['Sobreviventes', breakdown.survivors],
-          ['Bônus de velocidade', breakdown.speed],
+          ['Inimigos derrotados', `${breakdown.enemies} pts`],
+          ['Bosses derrotados', `${breakdown.bosses} pts`],
+          ['Multiplicador de sobrevivência', `×${breakdown.multiplier.toFixed(2)}`],
         ]
       : [];
     this.breakdownElement.replaceChildren(
@@ -139,6 +136,9 @@ export class ResultScreen extends BaseScreen {
   private async submit(): Promise<void> {
     this.submitButton.disabled = true;
     this.submitButton.textContent = 'Enviando...';
+    // Nome digitado → Game (o hook era declarado, mas nunca era chamado:
+    // o insert falhava com "Informe um nome" antes de chegar ao banco).
+    this.hooks.setPlayerName(sanitizePlayerName(this.nameInput.value));
     const outcome = await this.hooks.submitScore();
     if (outcome.ok) {
       this.submitButton.textContent = 'Enviado ✓';
@@ -146,7 +146,8 @@ export class ResultScreen extends BaseScreen {
         ? `Posição no ranking: #${outcome.position}`
         : 'Score registrado!';
     } else {
-      this.submitStatus.textContent = 'Não foi possível atualizar o ranking.';
+      // Mostra o motivo real (antes a mensagem genérica escondia o erro).
+      this.submitStatus.textContent = `Não foi possível atualizar o ranking: ${outcome.error}`;
       this.submitButton.textContent = 'Tentar novamente';
       this.submitButton.disabled = false;
     }

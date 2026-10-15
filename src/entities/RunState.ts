@@ -6,9 +6,9 @@ export class RunState {
   level = 1;
   xp = 0;
   kills = 0;
-  /** Bosses derrotados (score, §10). */
+  /** Bosses derrotados (pontos base da pontuação, §10). */
   bossKills = 0;
-  /** Fases concluídas com vitória (score, §10). */
+  /** Fases concluídas com vitória (registro de progresso da run). */
   phasesCompleted = 0;
   elapsedSeconds = 0;
   /** Equipamentos por personagem (characterId → ids de equipamento, §4). */

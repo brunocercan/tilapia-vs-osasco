@@ -13,6 +13,7 @@ import { ScoreSystem, type ScoreBreakdown } from '../systems/ScoreSystem';
 import { RunState } from '../entities/RunState';
 import { LeaderboardService } from '../services/LeaderboardService';
 import type { ScoreSubmitOutcome } from '../ui/ResultScreen';
+import { sanitizePlayerName } from '../utils/sanitize';
 
 /** Intervalo mínimo entre envios de score (anti-spam local — SPEC-TECNICA §7). */
 const SUBMIT_THROTTLE_MS = 10_000;
@@ -122,7 +123,7 @@ export class Game {
       // runState.elapsedSeconds já é acumulado pela própria batalha
 
       if (!result.victory) {
-        this.lastBreakdown = this.computeBreakdown(result.survivors);
+        this.lastBreakdown = this.computeBreakdown();
         this.stateManager.setState(GameState.Defeat);
         return;
       }
@@ -132,7 +133,7 @@ export class Game {
       this.battlesCompleted += 1;
       this.runState.phasesCompleted += 1;
       if (this.battlesCompleted >= PHASES.length) {
-        this.lastBreakdown = this.computeBreakdown(result.survivors);
+        this.lastBreakdown = this.computeBreakdown();
         this.stateManager.setState(GameState.Victory);
       } else {
         this.rewardOptions = EquipmentSystem.rollOptions(this.random);
@@ -143,19 +144,16 @@ export class Game {
   }
 
   /** Pontuação da run (SPEC-JOGO §10), calculada uma vez ao terminar. */
-  private computeBreakdown(survivors: number): ScoreBreakdown {
-    const phaseScoreBonusPercent = [...this.runState.equipmentIds.values()]
+  private computeBreakdown(): ScoreBreakdown {
+    const killScoreBonusPercent = [...this.runState.equipmentIds.values()]
       .flat()
-      .reduce((sum, id) => sum + (EQUIPMENT_BY_ID.get(id)?.scorePhaseBonusPercent ?? 0), 0);
+      .reduce((sum, id) => sum + (EQUIPMENT_BY_ID.get(id)?.scoreKillBonusPercent ?? 0), 0);
 
     return ScoreSystem.calculate({
       kills: this.runState.kills,
       bossKills: this.runState.bossKills,
-      level: this.runState.level,
-      survivors,
-      phasesCompleted: this.runState.phasesCompleted,
       elapsedSeconds: this.runState.elapsedSeconds,
-      phaseScoreBonusPercent,
+      killScoreBonusPercent,
     });
   }
 
@@ -170,7 +168,9 @@ export class Game {
     if (!this.leaderboard.enabled || !this.lastBreakdown || !this.lastResult) {
       return { ok: false, error: 'Ranking indisponível' };
     }
-    if (!this.playerName.trim()) {
+    // Nome sanitizado (sem < > etc.): o CHECK do banco rejeita HTML no nome.
+    const playerName = sanitizePlayerName(this.playerName);
+    if (!playerName) {
       return { ok: false, error: 'Informe um nome para enviar ao ranking' };
     }
     if (this.scoreSubmittedForRun) {
@@ -184,7 +184,7 @@ export class Game {
     }
 
     const submit = await this.leaderboard.submitScore({
-      player_name: this.playerName,
+      player_name: playerName,
       score: this.lastBreakdown.total,
       run_time_ms: Math.round(this.runState.elapsedSeconds * 1000),
       victory: this.lastResult.victory,

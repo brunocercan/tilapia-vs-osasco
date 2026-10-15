@@ -4,6 +4,8 @@ import { RandomService } from '../src/services/RandomService';
 import { RunState } from '../src/entities/RunState';
 import { CHARACTERS } from '../src/data/characters';
 import { PHASES } from '../src/data/phases';
+import { ExperienceSystem } from '../src/systems/ExperienceSystem';
+import type { Fighter } from '../src/entities/Fighter';
 
 function simulateBattle(random: RandomService): { result: BattleResult | null; runState: RunState } {
   let result: BattleResult | null = null;
@@ -46,5 +48,34 @@ describe('BattleScene — integração da Fase 1 (waves + boss)', () => {
     const { result, runState } = simulateBattle(new RandomService(() => 0.5));
     expect(result).not.toBeNull();
     expect(runState.elapsedSeconds).toBeGreaterThan(30);
+  });
+});
+
+describe('BattleScene — level up cura e renasce o time', () => {
+  it('ao subir de nível, os dois personagens ficam com vida cheia e o morto renasce', () => {
+    const runState = new RunState();
+    const scene = new BattleScene(
+      [CHARACTERS[0], CHARACTERS[1]],
+      PHASES[0],
+      new RandomService(() => 0.5),
+      runState,
+      () => {},
+    );
+    scene.layout(800, 600);
+
+    ExperienceSystem.grantXp(runState, ExperienceSystem.xpForNextLevel(1)); // nível 2
+    const players: Fighter[] = (scene as unknown as { fighters: Fighter[] }).fighters
+      .filter((f) => f.team === 'PLAYER');
+    players[0].hp = 30;                 // vivo, mas machucado
+    players[1].hp = 0;                 // morto
+    expect(players[1].alive).toBe(false);
+
+    (scene as unknown as { applyLevelUp: () => void }).applyLevelUp();
+
+    // Vida curada por completo
+    expect(players[0].hp).toBe(players[0].stats.maxHp);
+    // Morto renasce com vida cheia
+    expect(players[1].alive).toBe(true);
+    expect(players[1].hp).toBe(players[1].stats.maxHp);
   });
 });

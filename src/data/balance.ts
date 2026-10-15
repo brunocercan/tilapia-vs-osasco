@@ -47,19 +47,17 @@ export const BALANCE = {
     maxSlots: 2,
   },
 
-  /** Pontuação (SPEC-JOGO §10). Números iniciais de balanceamento. */
+  /**
+   * Pontuação (SPEC-JOGO §10), rebalanceada em out/2026:
+   * score = pontos por inimigos derrotados × multiplicador de sobrevivência.
+   * O multiplicador cresce com o tempo vivo na run ativa — sobreviver
+   * mais tempo vale mais; tempo sozinho não gera ponto nenhum.
+   */
   score: {
     enemyKill: 10,
     bossKill: 150,
-    phaseClear: 100,
-    levelBonus: 25,
-    survivorBonus: 50,
-    /**
-     * Run alvo ~5 min: bônus por segundo abaixo do alvo. Propositalmente
-     * modesto (§10): uma run fraca não pontua alto só por terminar rápido.
-     */
-    targetRunSeconds: 300,
-    speedBonusPerSecond: 4,
+    /** Multiplicador por tempo vivo: +0,1 a cada minuto de run. */
+    survivalMultiplierPerMinute: 0.1,
   },
 
   /** Progressão de experiência (SPEC-JOGO §9). */

@@ -156,11 +156,11 @@ export const EQUIPMENTS: readonly EquipmentDefinition[] = [
   {
     id: 'vale-transporte',
     name: 'Vale-Transporte',
-    description: '+5% vel. de movimentação, +10% pontuação por fase concluída.',
+    description: '+5% vel. de movimentação, +10% pontuação por inimigo derrotado.',
     color: '#ff9f1c',
     stackable: true,
     statPercents: { moveSpeed: 5 },
-    scorePhaseBonusPercent: 10,
+    scoreKillBonusPercent: 10,
   },
   {
     id: 'marmita-ontem',

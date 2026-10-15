@@ -43,14 +43,23 @@ describe('ExperienceSystem — SPEC-JOGO §9', () => {
 });
 
 describe('LevelSystem — ganho de nível (SPEC-JOGO §9)', () => {
-  it('aumenta HP máximo e cura o incremento', () => {
+  it('aumenta HP máximo e cura a vida completamente', () => {
     const fighter = createPlayerFighter(CHARACTERS[0]); // Kiki base maxHp dinâmico
     fighter.hp = 50;
     const baseHp = fighter.stats.maxHp;     // lê a partir do personagem
     LevelSystem.applyLevelUp(fighter, 2);
     const expectedMaxHp = Math.round(baseHp * 1.06);
     expect(fighter.stats.maxHp).toBe(expectedMaxHp);
-    expect(fighter.hp).toBe(50 + (expectedMaxHp - baseHp));
+    expect(fighter.hp).toBe(expectedMaxHp); // cura total no level up
+  });
+
+  it('renasce um personagem morto no level up (vida cheia)', () => {
+    const fighter = createPlayerFighter(CHARACTERS[0]);
+    fighter.hp = 0;
+    expect(fighter.alive).toBe(false);
+    LevelSystem.applyLevelUp(fighter, 2);
+    expect(fighter.alive).toBe(true);
+    expect(fighter.hp).toBe(fighter.stats.maxHp);
   });
 
   it('aumenta o dano levemente', () => {

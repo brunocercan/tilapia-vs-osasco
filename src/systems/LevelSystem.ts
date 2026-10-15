@@ -8,15 +8,14 @@ function round2(value: number): number {
 /**
  * Ganhos de nível (SPEC-JOGO §9): HP máximo e dano sobem levemente,
  * mais um atributo secundário em rotação determinística.
- * O incremento de HP máximo também cura o personagem no mesmo valor.
+ * Ao subir de nível a vida é curada por completo (out/2026) — e um
+ * personagem morto renasce com a vida cheia (revive no level up).
  */
 export class LevelSystem {
   static applyLevelUp(fighter: Fighter, newLevel: number): void {
     const gain = BALANCE.progression.levelUp;
 
-    const maxHpBefore = fighter.stats.maxHp;
-    fighter.stats.maxHp = Math.round(maxHpBefore * (1 + gain.maxHpPercent / 100));
-    fighter.hp += fighter.stats.maxHp - maxHpBefore;
+    fighter.stats.maxHp = Math.round(fighter.stats.maxHp * (1 + gain.maxHpPercent / 100));
 
     fighter.stats.damage = Math.max(1, Math.round(fighter.stats.damage * (1 + gain.damagePercent / 100)));
 
@@ -26,5 +25,8 @@ export class LevelSystem {
     } else {
       fighter.stats[boost.stat] += boost.flat;
     }
+
+    // Cura completa — e renascimento se estava morto.
+    fighter.hp = fighter.stats.maxHp;
   }
 }

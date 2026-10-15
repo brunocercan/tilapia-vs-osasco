@@ -301,13 +301,27 @@ export class BattleScene {
     }
   }
 
+  /**
+   * Aplica um nível ganho a TODOS os personagens: cura completa e,
+   * se um deles já estiver morto, renasce com a vida cheia.
+   */
   private applyLevelUp(): void {
     const newLevel = this.runState.level;
     for (const player of this.fighters) {
-      if (player.team === 'PLAYER' && player.alive) {
-        LevelSystem.applyLevelUp(player, newLevel);
-        this.pushEvent({ x: player.x, y: player.y - 54, text: 'LEVEL UP!', color: 'rgba(126, 200, 80, 1)' });
+      if (player.team !== 'PLAYER') {
+        continue;
       }
+      const wasAlive = player.alive;
+      if (!wasAlive) {
+        StatusEffectSystem.clearEffects(player); // renasce sem efeitos pendentes
+      }
+      LevelSystem.applyLevelUp(player, newLevel);
+      this.pushEvent({
+        x: player.x,
+        y: player.y - 54,
+        text: wasAlive ? 'LEVEL UP!' : 'RENASCEU!',
+        color: 'rgba(126, 200, 80, 1)',
+      });
     }
   }
 

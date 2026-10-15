@@ -3,52 +3,57 @@ import { BALANCE } from '../data/balance';
 export interface ScoreInput {
   kills: number;
   bossKills: number;
-  level: number;
-  survivors: number;
-  phasesCompleted: number;
+  /** Tempo total vivo na run ativa (s) — alimenta o multiplicador. */
   elapsedSeconds: number;
   /** Soma dos bônus % de equipamentos tipo Vale-Transporte (§4). */
-  phaseScoreBonusPercent: number;
+  killScoreBonusPercent: number;
 }
 
 export interface ScoreBreakdown {
+  /** Pontos por inimigos comuns derrotados. */
   enemies: number;
+  /** Pontos por bosses derrotados. */
   bosses: number;
-  phases: number;
-  level: number;
-  survivors: number;
-  speed: number;
+  /** Multiplicador de sobrevivência (1 + 0,1 por minuto vivo). */
+  multiplier: number;
   total: number;
 }
 
+function round2(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
 /**
- * Pontuação da run (SPEC-JOGO §10):
- * inimigos + bosses + bônus de nível + sobreviventes + fases + velocidade.
- * O tempo pesa bastante, mas não permite score alto numa run fraca:
- * sem bosses/fases, o bônus de velocidade sozinho não basta.
+ * Pontuação da run (SPEC-JOGO §10), rebalanceada em out/2026:
+ * SOMENTE inimigos derrotados (comuns + bosses) × multiplicador que
+ * aumenta com o tempo vivo na run ativa.
+ * Não há mais pontos por tempo, fases, nível ou sobreviventes — o
+ * tempo entra apenas como multiplicador de sobrevivência.
  */
 export class ScoreSystem {
+  /**
+   * Multiplicador de sobrevivência: 1 + `survivalMultiplierPerMinute`
+   * por minuto vivo na run. 5 min de run → ×1,5; 10 min → ×2,0.
+   */
+  static survivalMultiplier(elapsedSeconds: number): number {
+    const perMinute = BALANCE.score.survivalMultiplierPerMinute;
+    return round2(1 + (Math.max(0, elapsedSeconds) / 60) * perMinute);
+  }
+
   static calculate(input: ScoreInput): ScoreBreakdown {
     const s = BALANCE.score;
 
-    const enemies = input.kills * s.enemyKill;
-    const bosses = input.bossKills * s.bossKill;
-    // Vale-Transporte: +10% na pontuação de cada fase concluída (§4)
-    const phases = Math.round(
-      input.phasesCompleted * s.phaseClear * (1 + input.phaseScoreBonusPercent / 100),
-    );
-    const level = input.level * s.levelBonus;
-    const survivors = input.survivors * s.survivorBonus;
-    const speed = Math.max(0, Math.floor(s.targetRunSeconds - input.elapsedSeconds)) * s.speedBonusPerSecond;
+    // Vale-Transporte: +10% na pontuação de inimigos derrotados (§4)
+    const bonus = 1 + input.killScoreBonusPercent / 100;
+    const enemies = Math.round(input.kills * s.enemyKill * bonus);
+    const bosses = Math.round(input.bossKills * s.bossKill * bonus);
+    const multiplier = ScoreSystem.survivalMultiplier(input.elapsedSeconds);
 
     return {
       enemies,
       bosses,
-      phases,
-      level,
-      survivors,
-      speed,
-      total: enemies + bosses + phases + level + survivors + speed,
+      multiplier,
+      total: Math.round((enemies + bosses) * multiplier),
     };
   }
 }

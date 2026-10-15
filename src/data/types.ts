@@ -169,8 +169,8 @@ export interface EquipmentDefinition {
   everyNAttacksBonus?: { attacks: number; bonusPercent: number };
   /** Cura instantânea única por batalha ao cair abaixo do limiar (Marmita de Ontem). */
   oncePerBattleHeal?: { belowPercent: number; healPercent: number };
-  /** Bônus de pontuação por fase — aplicado no ScoreSystem (Fase 6). */
-  scorePhaseBonusPercent?: number;
+  /** Bônus % na pontuação de inimigos derrotados — aplicado no ScoreSystem. */
+  scoreKillBonusPercent?: number;
 }
 
 /** Estado de um equipamento colocado em um personagem durante a batalha. */
