@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { getSupabaseClient, isSupabaseConfigured } from './SupabaseService';
+import { getSupabaseClient, getSupabaseFunctionEndpoint, isSupabaseConfigured } from './SupabaseService';
 
 export interface ScoreEntry {
   player_name: string;
@@ -23,6 +23,8 @@ export type SubmitResult = { ok: true } | { ok: false; error: string };
  * erro, retorna resultado de falha e o jogo segue normalmente.
  * O cliente Supabase é carregado sob demanda (bundle inicial leve — §24).
  * Consulta principal espelha a SPEC-TECNICA §6 (score DESC, tempo ASC).
+ * v1.6.1: o ENVIO de score passa pela Edge Function `submit-score` —
+ * a publishable key não grava mais direto na tabela (RLS nega INSERT).
  */
 export class LeaderboardService {
   /**
@@ -74,9 +76,18 @@ export class LeaderboardService {
     }
   }
 
+  /**
+   * Envia o score pela Edge Function `submit-score` (v1.6.1) — o cliente
+   * NÃO grava mais direto na tabela: a publishable key não tem permissão
+   * de INSERT (RLS nega). A função valida tudo no servidor, aplica
+   * anti-flood e grava com a service role key.
+   */
   async submitScore(entry: ScoreEntry): Promise<SubmitResult> {
-    const client = await this.client();
-    if (!client) {
+    if (this.forceOffline) {
+      return { ok: false, error: 'Ranking indisponível (offline)' };
+    }
+    const endpoint = getSupabaseFunctionEndpoint('submit-score');
+    if (!endpoint) {
       return { ok: false, error: 'Ranking indisponível (offline)' };
     }
     const validationError = LeaderboardService.validate(entry);
@@ -84,9 +95,18 @@ export class LeaderboardService {
       return { ok: false, error: validationError };
     }
     try {
-      const { error } = await client.from(LeaderboardService.TABLE).insert(entry);
-      if (error) {
-        return { ok: false, error: error.message };
+      const response = await fetch(endpoint.url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: endpoint.key,
+          Authorization: `Bearer ${endpoint.key}`,
+        },
+        body: JSON.stringify(entry),
+      });
+      if (!response.ok) {
+        const data = (await response.json().catch(() => null)) as { error?: string } | null;
+        return { ok: false, error: data?.error ?? `Envio falhou (HTTP ${response.status})` };
       }
       return { ok: true };
     } catch (cause) {

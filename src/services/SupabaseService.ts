@@ -32,3 +32,18 @@ export function getSupabaseClient(): Promise<SupabaseClient | null> {
   }
   return cachedClient;
 }
+
+/**
+ * Endpoint de uma Edge Function (v1.6.1). O envio de score passou a usar
+ * a função `submit-score`: a publishable key não grava mais direto na
+ * tabela (RLS nega) — ela é só o bilhete de entrada da função, que valida
+ * tudo no servidor antes de gravar com a service role key.
+ */
+export function getSupabaseFunctionEndpoint(name: string): { url: string; key: string } | null {
+  const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+  const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
+  if (!url || !key) {
+    return null;
+  }
+  return { url: `${url.replace(/\/$/, '')}/functions/v1/${name}`, key };
+}
