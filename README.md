@@ -41,7 +41,15 @@ O desenvolvimento segue as fases incrementais da SPEC-TECNICA §29:
 
 \* Áudio é opcional na spec e ficou de fora para manter o projeto sem assets binários.
 
-\* Easter egg extra (pedido fora da spec): boss secreto que aparece aleatoriamente em qualquer tela.
+
+
+## Changelog
+
+O changelog também aparece na tela inicial do jogo (botão "Novidades"); a source-of-truth está incluído em `src/data/changelog.ts`:
+
+- v1.0.0-balance: HP +15-20% e passivas bufadas
+- Ranking: nome só na tela de resultado, obrigatório para publicar; sem "Anônimo"
+- Removido easter egg a pedido
 
 ## Publicação (passos manuais)
 

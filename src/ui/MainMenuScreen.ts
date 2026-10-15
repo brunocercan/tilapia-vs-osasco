@@ -4,6 +4,7 @@ export interface MainMenuActions {
   onPlay: () => void;
   onLeaderboard: () => void;
   onHowToPlay: () => void;
+  onChangelog: () => void;
 }
 
 /** Tela inicial (SPEC-JOGO §12): logo/título, Jogar, Ranking, Como Jogar. */
@@ -22,6 +23,7 @@ export class MainMenuScreen extends BaseScreen {
       createButton('Jogar', actions.onPlay),
       createButton('Ranking', actions.onLeaderboard),
       createButton('Como Jogar', actions.onHowToPlay),
+      createButton('Novidades', actions.onChangelog),
     );
 
     this.element.append(title, vs, buttons);

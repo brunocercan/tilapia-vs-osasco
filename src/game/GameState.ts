@@ -7,6 +7,7 @@
 export enum GameState {
   MainMenu = 'MAIN_MENU',
   CharacterSelect = 'CHARACTER_SELECT',
+  Changelog = 'CHANGELOG',
   Battle = 'BATTLE',
   EquipmentReward = 'EQUIPMENT_REWARD',
   Victory = 'VICTORY',

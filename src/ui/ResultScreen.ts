@@ -1,6 +1,7 @@
 import { BaseScreen, createButton, createTitle } from './Screen';
 import type { BattleResult } from '../game/BattleScene';
 import type { ScoreBreakdown } from '../systems/ScoreSystem';
+import { sanitizePlayerName, PLAYER_NAME_MAX_LENGTH } from '../utils/sanitize';
 
 export type ScoreSubmitOutcome =
   | { ok: true; position: number | null }
@@ -9,7 +10,7 @@ export type ScoreSubmitOutcome =
 export interface ResultScreenHooks {
   getResult: () => BattleResult | null;
   getBreakdown: () => ScoreBreakdown | null;
-  getPlayerName: () => string;
+  setPlayerName: (name: string) => void;
   getEquipmentSummary: () => string[];
   isRankingEnabled: () => boolean;
   submitScore: () => Promise<ScoreSubmitOutcome>;
@@ -23,13 +24,15 @@ function formatTime(totalSeconds: number): string {
 
 /**
  * Tela final (SPEC-JOGO §12): vitória/derrota, pontuação com breakdown,
- * tempo, nível, sobreviventes, equipamentos e envio ao ranking.
+ * tempo, nível, sobreviventes, equipamentos e envio ao ranking com o nome
+ * do jogador.
  */
 export class ResultScreen extends BaseScreen {
   private readonly titleElement: HTMLHeadingElement;
   private readonly scoreElement: HTMLParagraphElement;
   private readonly breakdownElement: HTMLUListElement;
   private readonly detailsElement: HTMLParagraphElement;
+  private readonly nameInput: HTMLInputElement;
   private readonly submitButton: HTMLButtonElement;
   private readonly submitStatus: HTMLParagraphElement;
 
@@ -49,19 +52,31 @@ export class ResultScreen extends BaseScreen {
     this.detailsElement = document.createElement('p');
     this.detailsElement.className = 'screen__message';
 
+    // Nome do jogador na tela final (§11: nome só aqui)
+    this.nameInput = document.createElement('input');
+    this.nameInput.type = 'text';
+    this.nameInput.maxLength = PLAYER_NAME_MAX_LENGTH;
+    this.nameInput.placeholder = 'Seu nome para o ranking';
+    this.nameInput.autocomplete = 'off';
+    this.nameInput.className = 'name-input';
+    this.nameInput.disabled = true;
+
     this.submitButton = createButton('Enviar para o ranking', () => void this.submit());
     this.submitStatus = document.createElement('p');
     this.submitStatus.className = 'screen__hint';
+    this.submitButton.disabled = true;
+    this.nameInput.addEventListener('input', () => this.updateSubmitButton());
 
     const buttons = document.createElement('div');
     buttons.className = 'screen__buttons screen__buttons--row';
-    buttons.append(createButton('Menu', onMenu));
+    buttons.append(this.submitButton, createButton('Menu', onMenu));
 
     this.element.append(
       this.titleElement,
       this.scoreElement,
       this.breakdownElement,
       this.detailsElement,
+      this.nameInput,
       this.submitButton,
       this.submitStatus,
       buttons,
@@ -104,14 +119,21 @@ export class ResultScreen extends BaseScreen {
         (equipment.length > 0 ? ` · Equipamentos: ${equipment.join(', ')}` : '');
     }
 
-    // Um envio por run (anti-spam — SPEC-TECNICA §7)
-    this.submitStatus.textContent = this.hooks.isRankingEnabled()
-      ? `${this.hooks.getPlayerName()}, envie sua pontuação!`
-      : 'Ranking indisponível no momento (offline).';
-    this.submitButton.disabled = !this.hooks.isRankingEnabled();
-    this.submitButton.textContent = 'Enviar para o ranking';
+    this.nameInput.disabled = !this.hooks.isRankingEnabled();
+    if (!this.hooks.isRankingEnabled()) {
+      this.submitStatus.textContent = 'Ranking indisponível no momento (offline).';
+    } else {
+      this.submitStatus.textContent = 'Informe um nome e envie para o ranking!';
+      this.submitButton.textContent = 'Enviar para o ranking';
+    }
+    this.updateSubmitButton();
 
     super.show();
+  }
+
+  private updateSubmitButton(): void {
+    const nameValid = sanitizePlayerName(this.nameInput.value).length > 0;
+    this.submitButton.disabled = !nameValid;
   }
 
   private async submit(): Promise<void> {

@@ -30,12 +30,16 @@ export const BALANCE = {
     /** Empurrão da Capivara Nervosa: 10% de chance (SPEC-JOGO §6). */
     capivaraKnockback: { chance: 10, distancePx: 80 },
 
-    /** Passivas dos personagens (SPEC-JOGO §3). */
-    moscowitta: { chance: 3, duration: 3, tickInterval: 1, magnitude: 3 },
-    marmita: { regenPerSecond: 3 },
-    cigarro: { bonusDodgeChance: 5 },
-    beckzito: { chance: 5, duration: 2 },
-    bombaQuimica: { chance: 3, damage: 3, radiusPx: 70 },
+    /**
+     * Passivas dos personagens (SPEC-JOGO §3), rebalanceado em out/2026:
+     * buffs de compensação de dificuldade — o jogo estava difícil.
+     * HP dos personagens acompanham os stats em characters.ts.
+     */
+    moscowitta: { chance: 6, duration: 3, tickInterval: 1, magnitude: 3 },
+    marmita: { regenPerSecond: 5 },
+    cigarro: { bonusDodgeChance: 10 },
+    beckzito: { chance: 8, duration: 2 },
+    bombaQuimica: { chance: 5, damage: 4, radiusPx: 70 },
   },
 
   equipment: {

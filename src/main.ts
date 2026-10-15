@@ -12,9 +12,8 @@ function getRequiredElement<T extends HTMLElement>(id: string): T {
 
 const canvas = getRequiredElement<HTMLCanvasElement>('game-canvas');
 const uiRoot = getRequiredElement<HTMLDivElement>('ui-root');
-const overlayCanvas = getRequiredElement<HTMLCanvasElement>('overlay-canvas');
 
-const game = new Game(canvas, uiRoot, overlayCanvas);
+const game = new Game(canvas, uiRoot);
 game.start();
 
 console.info(`${GAME_CONFIG.title} v1.0 — auto battler 2D do grupo Tilápia. Boa run!`);

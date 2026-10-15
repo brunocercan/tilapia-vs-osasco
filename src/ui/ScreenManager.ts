@@ -2,6 +2,7 @@ import { GameState, GameStateManager } from '../game/GameState';
 import type { Screen } from './Screen';
 import { MainMenuScreen } from './MainMenuScreen';
 import { HowToPlayScreen } from './HowToPlayScreen';
+import { ChangelogScreen } from './ChangelogScreen';
 import { CharacterSelectScreen } from './CharacterSelectScreen';
 import { ResultScreen, type ScoreSubmitOutcome } from './ResultScreen';
 import { EquipmentRewardScreen } from './EquipmentRewardScreen';
@@ -11,10 +12,10 @@ import type { BattleResult } from '../game/BattleScene';
 import type { ScoreBreakdown } from '../systems/ScoreSystem';
 
 export interface ScreenManagerHooks {
-  onTeamConfirmed: (team: CharacterDefinition[], playerName: string) => void;
+  onTeamConfirmed: (team: CharacterDefinition[]) => void;
   getLastResult: () => BattleResult | null;
   getScoreBreakdown: () => ScoreBreakdown | null;
-  getPlayerName: () => string;
+  setPlayerName: (name: string) => void;
   /** Linhas "Equipamento (personagem)" da run para a tela final. */
   getEquipmentSummary: () => string[];
   getRewardOptions: () => EquipmentDefinition[];
@@ -45,8 +46,10 @@ export class ScreenManager {
       onPlay: () => stateManager.setState(GameState.CharacterSelect),
       onLeaderboard: () => stateManager.setState(GameState.Leaderboard),
       onHowToPlay: () => stateManager.setState(GameState.HowToPlay),
+      onChangelog: () => stateManager.setState(GameState.Changelog),
     }));
     this.register(root, GameState.HowToPlay, new HowToPlayScreen(backToMenu));
+    this.register(root, GameState.Changelog, new ChangelogScreen(backToMenu));
     this.register(root, GameState.Leaderboard, new LeaderboardScreen(hooks.fetchLeaderboard, backToMenu));
     this.register(root, GameState.CharacterSelect, new CharacterSelectScreen(
       hooks.onTeamConfirmed,
@@ -56,7 +59,7 @@ export class ScreenManager {
     const resultScreen = new ResultScreen({
       getResult: hooks.getLastResult,
       getBreakdown: hooks.getScoreBreakdown,
-      getPlayerName: hooks.getPlayerName,
+      setPlayerName: hooks.setPlayerName,
       getEquipmentSummary: hooks.getEquipmentSummary,
       isRankingEnabled: hooks.isRankingEnabled,
       submitScore: hooks.submitScore,

@@ -17,7 +17,7 @@ export const CHARACTERS: readonly CharacterDefinition[] = [
     name: 'Kiki',
     color: '#d9534f',
     baseStats: {
-      maxHp: 90,
+      maxHp: 105,
       damage: 10,
       attackSpeed: 1.0,
       range: 50,
@@ -29,7 +29,7 @@ export const CHARACTERS: readonly CharacterDefinition[] = [
     passive: {
       id: 'moscowitta',
       name: 'Moscowitta',
-      description: '3% de chance de aplicar Veneno (3 de dano/s por 3s) ao atacar.',
+      description: '5% de chance de aplicar Veneno (3 de dano/s por 3s) ao atacar.',
       onHitEffects: [
         {
           kind: 'STATUS',
@@ -49,7 +49,7 @@ export const CHARACTERS: readonly CharacterDefinition[] = [
     name: 'Tombas',
     color: '#e0a32e',
     baseStats: {
-      maxHp: 120,
+      maxHp: 140,
       damage: 9,
       attackSpeed: 0.9,
       range: 45,
@@ -61,7 +61,7 @@ export const CHARACTERS: readonly CharacterDefinition[] = [
     passive: {
       id: 'marmita',
       name: 'Marmita',
-      description: 'Regenera +3 HP por segundo, mesmo durante o combate.',
+      description: 'Regenera +5 HP por segundo, mesmo durante o combate.',
       hpRegenPerSecond: BALANCE.effects.marmita.regenPerSecond,
     },
   },
@@ -70,7 +70,7 @@ export const CHARACTERS: readonly CharacterDefinition[] = [
     name: 'Veronezio',
     color: '#4a90d9',
     baseStats: {
-      maxHp: 85,
+      maxHp: 100,
       damage: 10,
       attackSpeed: 1.1,
       range: 50,
@@ -82,7 +82,7 @@ export const CHARACTERS: readonly CharacterDefinition[] = [
     passive: {
       id: 'cigarro',
       name: 'Cigarro',
-      description: '+5% de chance de esquiva.',
+      description: '+10% de chance de esquiva.',
       statModifiers: { dodgeChance: BALANCE.effects.cigarro.bonusDodgeChance },
     },
   },
@@ -91,7 +91,7 @@ export const CHARACTERS: readonly CharacterDefinition[] = [
     name: 'Marcola',
     color: '#9b59b6',
     baseStats: {
-      maxHp: 100,
+      maxHp: 115,
       damage: 11,
       attackSpeed: 0.95,
       range: 45,
@@ -103,7 +103,7 @@ export const CHARACTERS: readonly CharacterDefinition[] = [
     passive: {
       id: 'beckzito',
       name: 'Beckzito',
-      description: '+5% de chance de aplicar Confusão (2s) ao atacar.',
+      description: '+8% de chance de aplicar Confusão (2s) ao atacar.',
       onHitEffects: [
         {
           kind: 'STATUS',
@@ -122,7 +122,7 @@ export const CHARACTERS: readonly CharacterDefinition[] = [
     name: 'Mattioni',
     color: '#16a085',
     baseStats: {
-      maxHp: 95,
+      maxHp: 110,
       damage: 9,
       attackSpeed: 1.0,
       range: 45,
@@ -134,7 +134,7 @@ export const CHARACTERS: readonly CharacterDefinition[] = [
     passive: {
       id: 'bomba-quimica',
       name: 'Bomba Química',
-      description: '3% de chance de lançar uma Bomba Química (3 de dano em área).',
+      description: '5% de chance de lançar uma Bomba Química (3 de dano em área) ao atacar.',
       onHitEffects: [
         {
           kind: 'AOE',
