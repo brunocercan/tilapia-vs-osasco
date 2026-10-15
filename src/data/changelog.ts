@@ -4,6 +4,7 @@
  * entradas aparecem, mas o histórico completo fica registrado aqui.
  */
 export const CHANGELOG: readonly string[] = [
+  'v1.6.2: tilápia pixel art como ícone da aba e favorito ★',
   'v1.6.1: segurança do rank — envio passa por validação no servidor (Edge Function); apikey não grava mais direto',
   'v1.6.0: modo infinito BASTANTE mais difícil — inimigos ganham +50% HP/dano por fase infinita',
   'v1.6.0: Mini-Kirk muito mais comum no infinito e podem vir vários juntos!',
