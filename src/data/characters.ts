@@ -5,12 +5,15 @@ import type { CharacterDefinition } from './types';
 /**
  * Os 5 amigos do grupo Tilápia (SPEC-JOGO §3).
  * Passivas são dados com parte descritiva (UI) e mecânica (sistemas):
- * - Moscowitta (Kiki): 7% de chance de Veneno (3 dano/s por 3s)
- * - Marmita (Tombas): +6 HP/s de regeneração
- * - Cigarro (Veronezio): +12% de esquiva
- * - Beckzito (Marcola): +9% de chance de Confusão (2s)
- * - Bomba Química (Mattioni): 6% de chance de dano em área
- * (v1.2.0: passivas +~15%; descrições lêem os valores do BALANCE.)
+ * - Moscowitta (Kiki): 17% de chance de Veneno (3 dano/s por 3s)
+ * - Marmita (Tombas): a cada 8s, regenera +6 HP/s por 3s (v1.5.0)
+ * - Cigarro (Veronezio): +15% de esquiva
+ * - Beckzito (Marcola): +16% de chance de Confusão (2s)
+ * - Bomba Química (Mattioni): 16% de chance de dano em área
+ *
+ * v1.5.0: Tombas nerfado (HP 140→110; regen constante→janela periódica);
+ * os outros 4 personagens ganharam +15% em todos os stats base.
+ * Descrições lêem os valores do BALANCE para nunca dessincronizar.
  */
 export const CHARACTERS: readonly CharacterDefinition[] = [
   {
@@ -18,14 +21,14 @@ export const CHARACTERS: readonly CharacterDefinition[] = [
     name: 'Kiki',
     color: '#d9534f',
     baseStats: {
-      maxHp: 105,
-      damage: 10,
-      attackSpeed: 1.0,
-      range: 50,
+      maxHp: 121,   // v1.5.0: +15% (era 105)
+      damage: 12,   // +15% (era 10)
+      attackSpeed: 1.15,
+      range: 58,
       defense: 3,
-      critChance: 8,
-      dodgeChance: 5,
-      moveSpeed: 90,
+      critChance: 9,
+      dodgeChance: 6,
+      moveSpeed: 104,
     },
     passive: {
       id: 'moscowitta',
@@ -50,7 +53,7 @@ export const CHARACTERS: readonly CharacterDefinition[] = [
     name: 'Tombas',
     color: '#e0a32e',
     baseStats: {
-      maxHp: 140,
+      maxHp: 110, // v1.5.0: nerf (era 140)
       damage: 9,
       attackSpeed: 0.9,
       range: 45,
@@ -62,8 +65,12 @@ export const CHARACTERS: readonly CharacterDefinition[] = [
     passive: {
       id: 'marmita',
       name: 'Marmita',
-      description: `Regenera +${BALANCE.effects.marmita.regenPerSecond} HP por segundo, mesmo durante o combate.`,
-      hpRegenPerSecond: BALANCE.effects.marmita.regenPerSecond,
+      description: `A cada ${BALANCE.effects.marmita.cooldownSeconds}s, regenera +${BALANCE.effects.marmita.hpPerSecond} HP/s por ${BALANCE.effects.marmita.durationSeconds}s.`,
+      periodicRegen: {
+        hpPerSecond: BALANCE.effects.marmita.hpPerSecond,
+        cooldownSeconds: BALANCE.effects.marmita.cooldownSeconds,
+        durationSeconds: BALANCE.effects.marmita.durationSeconds,
+      },
     },
   },
   {
@@ -71,14 +78,14 @@ export const CHARACTERS: readonly CharacterDefinition[] = [
     name: 'Veronezio',
     color: '#4a90d9',
     baseStats: {
-      maxHp: 100,
-      damage: 10,
-      attackSpeed: 1.1,
-      range: 50,
+      maxHp: 115,   // v1.5.0: +15% (era 100)
+      damage: 12,   // +15% (era 10)
+      attackSpeed: 1.27,
+      range: 58,
       defense: 3,
-      critChance: 10,
-      dodgeChance: 5,
-      moveSpeed: 95,
+      critChance: 12,
+      dodgeChance: 6,
+      moveSpeed: 109,
     },
     passive: {
       id: 'cigarro',
@@ -92,14 +99,14 @@ export const CHARACTERS: readonly CharacterDefinition[] = [
     name: 'Marcola',
     color: '#9b59b6',
     baseStats: {
-      maxHp: 115,
-      damage: 11,
-      attackSpeed: 0.95,
-      range: 45,
-      defense: 4,
-      critChance: 8,
-      dodgeChance: 5,
-      moveSpeed: 90,
+      maxHp: 132,   // v1.5.0: +15% (era 115)
+      damage: 13,   // +15% (era 11)
+      attackSpeed: 1.09,
+      range: 52,
+      defense: 5,
+      critChance: 9,
+      dodgeChance: 6,
+      moveSpeed: 104,
     },
     passive: {
       id: 'beckzito',
@@ -123,14 +130,14 @@ export const CHARACTERS: readonly CharacterDefinition[] = [
     name: 'Mattioni',
     color: '#16a085',
     baseStats: {
-      maxHp: 110,
-      damage: 9,
-      attackSpeed: 1.0,
-      range: 45,
-      defense: 4,
-      critChance: 5,
-      dodgeChance: 5,
-      moveSpeed: 90,
+      maxHp: 127,   // v1.5.0: +15% (era 110)
+      damage: 10,   // +15% (era 9)
+      attackSpeed: 1.15,
+      range: 52,
+      defense: 5,
+      critChance: 6,
+      dodgeChance: 6,
+      moveSpeed: 104,
     },
     passive: {
       id: 'bomba-quimica',

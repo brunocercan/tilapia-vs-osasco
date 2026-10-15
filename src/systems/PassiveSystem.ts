@@ -11,15 +11,20 @@ export interface PassiveTickEvent {
  * Efeitos contínuos de passivas (SPEC-JOGO §3, ex.: regeneração da Marmita).
  * A cura acumula frações e é aplicada em passos inteiros, evitando
  * múltiplas aplicações no mesmo frame (SPEC-JOGO §5).
+ *
+ * v1.5.0: a Marmita (Tombas) virou janela periódica — ativa por
+ * `durationSeconds` a cada `cooldownSeconds` (anúncio "MARMITA!"),
+ * em vez de regeneração constante.
  */
 export class PassiveSystem {
   update(fighters: readonly Fighter[], deltaSeconds: number, onTick?: (event: PassiveTickEvent) => void): void {
     for (const fighter of fighters) {
       if (!fighter.alive) {
-        continue;
+        continue; // morto não regenera (e a janela fica congelada)
       }
 
-      // Regeneração: base + bônus condicional abaixo do limiar (Queijo, §4)
+      // Regeneração contínua: base (equipamentos) + bônus condicional
+      // abaixo do limiar (Queijo, §4)
       let regenPerSecond = fighter.hpRegenPerSecond;
       if (
         fighter.hpRegenLowHpBonusPerSecond > 0 &&
@@ -27,11 +32,34 @@ export class PassiveSystem {
       ) {
         regenPerSecond += fighter.hpRegenLowHpBonusPerSecond;
       }
-      if (regenPerSecond <= 0) {
-        continue;
+      fighter.regenAccumulator += regenPerSecond * deltaSeconds;
+
+      // Marmita (v1.5.0): regen apenas pelos segundos em que a janela
+      // esteve ativa dentro do frame — o excedente da ativação conta.
+      const periodic = fighter.periodicRegen;
+      if (periodic) {
+        let activeTime = 0;
+        if (periodic.activeRemaining > 0) {
+          activeTime = Math.min(periodic.activeRemaining, deltaSeconds);
+          periodic.activeRemaining -= deltaSeconds;
+        } else {
+          periodic.timeToActivation -= deltaSeconds;
+          if (periodic.timeToActivation <= 0) {
+            const overflow = -periodic.timeToActivation; // sobra do frame
+            activeTime = Math.min(overflow, periodic.durationSeconds);
+            periodic.activeRemaining = periodic.durationSeconds - activeTime;
+            periodic.timeToActivation = periodic.cooldownSeconds;
+            onTick?.({
+              x: fighter.x,
+              y: fighter.y - 54,
+              text: 'MARMITA!',
+              color: 'rgba(120, 255, 160, 1)',
+            });
+          }
+        }
+        fighter.regenAccumulator += periodic.hpPerSecond * activeTime;
       }
 
-      fighter.regenAccumulator += regenPerSecond * deltaSeconds;
       if (fighter.regenAccumulator < 1) {
         continue;
       }

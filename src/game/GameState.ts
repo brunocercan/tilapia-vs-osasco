@@ -10,6 +10,8 @@ export enum GameState {
   Changelog = 'CHANGELOG',
   Battle = 'BATTLE',
   EquipmentReward = 'EQUIPMENT_REWARD',
+  /** v1.3.0: fim da run padrão/fase infinita — continuar ou encerrar. */
+  ContinueRun = 'CONTINUE_RUN',
   Victory = 'VICTORY',
   Defeat = 'DEFEAT',
   Leaderboard = 'LEADERBOARD',

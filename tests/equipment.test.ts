@@ -64,10 +64,10 @@ describe('Catálogo de equipamentos (SPEC-JOGO §4/§14)', () => {
   });
 
   it('lendários são mais fortes: PC do Tianrão dá +25% dano e +10% vel. de ataque', () => {
-    const fighter = kiki(); // dano base 10, vel. ataque 1.0
+    const fighter = kiki(); // v1.5.0: dano base 12, vel. ataque 1.15
     EquipmentSystem.apply(fighter, equip('pc-tianrao'));
-    expect(fighter.stats.damage).toBeCloseTo(10 * 1.25, 3);
-    expect(fighter.stats.attackSpeed).toBeCloseTo(1.0 * 1.10, 3);
+    expect(fighter.stats.damage).toBeCloseTo(12 * 1.25, 3);
+    expect(fighter.stats.attackSpeed).toBeCloseTo(1.15 * 1.10, 3);
   });
 
   it('Marmita da Avó não acumula consigo mesma', () => {
@@ -80,15 +80,15 @@ describe('Catálogo de equipamentos (SPEC-JOGO §4/§14)', () => {
 
 describe('EquipmentSystem — aplicação e regras do §5', () => {
   it('aplica modificadores percentuais multiplicativos (Tadalinha)', () => {
-    const fighter = kiki();
+    const fighter = kiki(); // v1.5.0: vel. de ataque base 1.15
     EquipmentSystem.apply(fighter, equip('tadalinha'));
-    expect(fighter.stats.attackSpeed).toBeCloseTo(1.0 * 1.05, 3);
+    expect(fighter.stats.attackSpeed).toBeCloseTo(1.15 * 1.05, 3);
   });
 
   it('aplica chances como pontos percentuais aditivos (Óculos Escuros)', () => {
-    const fighter = kiki(); // esquiva base 5
+    const fighter = kiki(); // esquiva base 6 (v1.5.0: +15%)
     EquipmentSystem.apply(fighter, equip('oculos-escuros'));
-    expect(fighter.stats.dodgeChance).toBe(13);
+    expect(fighter.stats.dodgeChance).toBe(14);
   });
 
   it('respeita os tetos globais: esquiva 50%, crítico 60%, vel. ataque +100%', () => {

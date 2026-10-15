@@ -1,4 +1,5 @@
 import { BALANCE } from '../data/balance';
+import { EQUIPMENT_BY_ID } from '../data/equipment';
 
 export interface ScoreInput {
   kills: number;
@@ -31,6 +32,20 @@ function round2(value: number): number {
  * tempo entra apenas como multiplicador de sobrevivência.
  */
 export class ScoreSystem {
+  /**
+   * Soma dos bônus % de pontuação de todos os equipamentos da run
+   * (Vale-Transporte +10%, Colar do Grupo Tilápia +25% — §4).
+   */
+  static killScoreBonusPercent(equipmentIds: ReadonlyMap<string, readonly string[]>): number {
+    let sum = 0;
+    for (const ids of equipmentIds.values()) {
+      for (const id of ids) {
+        sum += EQUIPMENT_BY_ID.get(id)?.scoreKillBonusPercent ?? 0;
+      }
+    }
+    return sum;
+  }
+
   /**
    * Multiplicador de sobrevivência: 1 + `survivalMultiplierPerMinute`
    * por minuto vivo na run. 5 min de run → ×1,5; 10 min → ×2,0.

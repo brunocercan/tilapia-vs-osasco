@@ -18,11 +18,11 @@ const charById = (id: string) => {
 };
 
 describe('Passivas dos personagens (SPEC-JOGO §3)', () => {
-  it('Moscowitta (Kiki): 7% de chance de Veneno, 3 dano/s por 3s', () => {
+  it('Moscowitta (Kiki): 17% de chance de Veneno, 3 dano/s por 3s', () => {
     const kiki = createPlayerFighter(charById('kiki'));
     const veneno = kiki.onHitEffects.find((e) => e.kind === 'STATUS');
     expect(veneno).toBeDefined();
-    expect(veneno?.chance).toBe(BALANCE.effects.moscowitta.chance); // 7
+    expect(veneno?.chance).toBe(BALANCE.effects.moscowitta.chance); // 17
     if (veneno?.kind === 'STATUS') {
       expect(veneno.effect.type).toBe(StatusEffectType.Poison);
       expect(veneno.effect.duration).toBe(3);
@@ -30,30 +30,70 @@ describe('Passivas dos personagens (SPEC-JOGO §3)', () => {
     }
   });
 
-  it('Cigarro (Veronezio): +12% de esquiva', () => {
+  it('Cigarro (Veronezio): +15% de esquiva', () => {
     const veronezio = createPlayerFighter(charById('veronezio'));
     expect(veronezio.stats.dodgeChance).toBe(
       charById('veronezio').baseStats.dodgeChance + BALANCE.effects.cigarro.bonusDodgeChance,
     );
   });
 
-  it('Marmita (Tombas): regenera +6 HP por segundo, sem ultrapassar o máximo', () => {
+  it('Marmita (Tombas, v1.5.0): regen só na janela periódica — nada fora dela', () => {
     const tombas = createPlayerFighter(charById('tombas'));
     tombas.hp = 50;
     const system = new PassiveSystem();
+    const marmita = BALANCE.effects.marmita;
 
-    system.update([tombas], 1.0); // 1s → acumula 6 → cura 6
-    expect(tombas.hp).toBe(56);
+    // Cooldown inicial: 1s fora da janela não cura nada
+    system.update([tombas], 1.0);
+    expect(tombas.hp).toBe(50);
 
-    tombas.hp = tombas.stats.maxHp - 1;
-    system.update([tombas], 1.0); // cura limitada ao máximo
+    // Janela abre ao completar o cooldown e regenera durante 3s
+    system.update([tombas], marmita.cooldownSeconds - 1); // ativa exatamente agora
+    system.update([tombas], 1.0);
+    const hpNaJanela = tombas.hp;
+    expect(hpNaJanela).toBe(50 + marmita.hpPerSecond); // 1º segundo da janela
+    system.update([tombas], 1.0);
+    expect(tombas.hp).toBe(hpNaJanela + marmita.hpPerSecond);
+    system.update([tombas], 1.0);
+    expect(tombas.hp).toBe(hpNaJanela + 2 * marmita.hpPerSecond); // 3s no total
+
+    // Janela fechou: cooldown recomeça e não cura
+    const hpPosJanela = tombas.hp;
+    system.update([tombas], 1.0);
+    expect(tombas.hp).toBe(hpPosJanela);
+  });
+
+  it('Marmita: reabre a janela após o cooldown completo', () => {
+    const tombas = createPlayerFighter(charById('tombas'));
+    tombas.hp = 50;
+    const system = new PassiveSystem();
+    const marmita = BALANCE.effects.marmita;
+
+    system.update([tombas], marmita.cooldownSeconds); // abre a janela
+    system.update([tombas], marmita.durationSeconds); // consome a janela
+    const hpFechada = tombas.hp;
+
+    system.update([tombas], marmita.cooldownSeconds); // cooldown completo → reabre
+    system.update([tombas], 1.0);
+    expect(tombas.hp).toBeGreaterThan(hpFechada);
+  });
+
+  it('Marmita: cura limitada ao HP máximo', () => {
+    const tombas = createPlayerFighter(charById('tombas'));
+    const system = new PassiveSystem();
+    const marmita = BALANCE.effects.marmita;
+
+    tombas.hp = tombas.stats.maxHp - 2;
+    system.update([tombas], marmita.cooldownSeconds); // abre a janela
+    system.update([tombas], marmita.durationSeconds);
     expect(tombas.hp).toBe(tombas.stats.maxHp);
   });
 
   it('Marmita: não cura personagem morto', () => {
     const tombas = createPlayerFighter(charById('tombas'));
     tombas.hp = 0;
-    new PassiveSystem().update([tombas], 1.0);
+    const system = new PassiveSystem();
+    system.update([tombas], 30); // cooldown + janela inteiros
     expect(tombas.hp).toBe(0);
   });
 

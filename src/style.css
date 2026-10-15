@@ -118,6 +118,17 @@ h2.screen__title {
   color: var(--color-accent);
 }
 
+/*
+ * Lista com rolagem própria (v1.4.1): quando o conteúdo estoura a tela,
+ * a barra de rolagem fica na lista e o botão "Voltar" permanece visível —
+ * o jogador nunca precisa atualizar a página para sair.
+ */
+.screen__list--scroll {
+  max-height: 46vh;
+  overflow-y: auto;
+  padding-right: 0.6rem; /* afasta o texto da barra de rolagem */
+}
+
 /* ---------------- Botões ---------------- */
 
 .btn {
@@ -362,4 +373,17 @@ h2.screen__title {
   position: sticky;
   top: 0;
   background: var(--color-panel);
+}
+
+/* ---------------- Tela "continuar run infinita" (v1.3.0) ---------------- */
+
+.screen--continue {
+  max-width: min(96vw, 34rem);
+  max-height: 92vh;
+  overflow-y: auto;
+}
+
+.btn--continue {
+  background: var(--color-accent);
+  font-weight: bold;
 }

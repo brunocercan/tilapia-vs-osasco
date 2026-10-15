@@ -133,6 +133,80 @@ function drawBarataVoadora(P: PixelPlotter): void {
   P(3, 15, 2, 1, '#3f2a20'); P(11, 15, 2, 1, '#3f2a20'); // pernas
 }
 
+// ---------- Mini-Kirk (v1.4.0): sub-chefe surpresa ----------
+// Design pixel art baseado em /Source-Images/Charlie.png (revivido do antigo
+// charlieSprite.ts): rosto grande — cabelo castanho, olhos castanhos,
+// sorriso aberto, terno azul com colarinho — sobre um corpinho minúsculo.
+
+const KIRK_PALETTE: Record<string, string> = {
+  H: '#241a12', // cabelo castanho escuro
+  K: '#171008', // cabelo sombra
+  S: '#e3b28c', // pele
+  s: '#c8946e', // pele sombra
+  E: '#2a1d12', // sobrancelha
+  W: '#f5f2ec', // branco do olho
+  I: '#4a3520', // íris castanha
+  N: '#cf9d74', // sombra do nariz
+  M: '#7a3b2e', // interior da boca
+  T: '#eae6dd', // dentes / camisa
+  R: '#b06a52', // lábios
+  J: '#1e2b45', // terno azul-marinho
+  C: '#e8e4dc', // colarinho da camisa
+  B: '#1a1a1a', // sapatos
+};
+
+/** Grade 20×32: 26 linhas de rosto + 6 de corpo. Cada linha tem 20 chars. */
+const MINI_KIRK_SPRITE: readonly string[] = [
+  '.......HHHHHH.......',
+  '.....HHHHHHHHHH.....',
+  '....HHHHHHHHHHHH....',
+  '...HKHHHHHHHHHKHH...',
+  '..HHHHHHHHHHHHHHHH..',
+  '..HHHSSHHSHHSSHHH...',
+  '...HHSSSSSSSSSSSH...',
+  '..HHSSSSSSSSSSSSHH..',
+  '..HSSSSSSSSSSSSSSH..',
+  '..HSSEEESSSSEEESSH..',
+  '..SSSWIWSSSSWIWSSS..',
+  '..SSSSSSSSSSSSSSSS..',
+  '..SSSSSSSSSSSSSSSS..',
+  '..SSSSSSSSNNSSSSSS..',
+  '..SSSSSSSNNNSSSSSS..',
+  '..SSSSSSSSSSSSSSSS..',
+  '..SSSSSRRRRRRRSSSS..',
+  '..SSSSMTTTTTTTMSSS..',
+  '..SSSSSMTTTTTMSSSS..',
+  '..SSSSSSSSSSSSSSSS..',
+  '...SSSSSSSSSSSSSS...',
+  '....SSSSSSSSSSSS....',
+  '.....SSSSSSSSSS.....',
+  '......SSSSSSSS......',
+  '........ssss........',
+  '..JJJJJCCssCCJJJJJ..',
+  '.JJJJJJJJTTJJJJJJJJ.',
+  '.JJJJJJJTTTTJJJJJJJ.',
+  'SJJJJJJJTTTTJJJJJJS',
+  '.JJJJJJJJTTJJJJJJJJ.',
+  '..JJJJJJ....JJJJJJ..',
+  '..BBBBBB....BBBBBB..',
+];
+
+function drawMiniKirk(P: PixelPlotter): void {
+  // O grid é 20×32 e a âncora do drawEnemySprite é 16×20: desloca
+  // dx/dy para centralizar horizontalmente e apoiar os pés no chão.
+  const dx = -2;
+  const dy = -12;
+  for (let row = 0; row < MINI_KIRK_SPRITE.length; row += 1) {
+    const line = MINI_KIRK_SPRITE[row];
+    for (let col = 0; col < line.length; col += 1) {
+      const color = KIRK_PALETTE[line[col]];
+      if (color) {
+        P(dx + col, dy + row, 1, 1, color);
+      }
+    }
+  }
+}
+
 const ENEMY_SPRITES: Record<string, (P: PixelPlotter) => void> = {
   'pernilongo': drawPernilongo,
   'capivara-nervosa': drawCapivara,
@@ -144,6 +218,7 @@ const ENEMY_SPRITES: Record<string, (P: PixelPlotter) => void> = {
   'inseto-gigante': drawInsetoGigante,
   'cachorro-bravo': drawCachorroBravo,
   'barata-voadora': drawBarataVoadora,
+  'mini-kirk': drawMiniKirk,
 };
 
 /**
@@ -172,3 +247,13 @@ export function drawEnemySprite(
 export const ENEMY_SPRITE_ROWS = 20;
 /** Altura dos sprites de personagem — 22u. */
 export const CHARACTER_SPRITE_ROWS = 22;
+/** Altura (em unidades) do rosto + corpo do Mini-Kirk — 32u (v1.4.0). */
+export const MINI_KIRK_SPRITE_ROWS = 32;
+
+/**
+ * Altura em unidades do sprite do inimigo: 20u padrão; o Mini-Kirk usa
+ * um grid maior (rosto + corpo) e por isso recebe "pixels" menores.
+ */
+export function enemySpriteRows(enemyId: string): number {
+  return enemyId === 'mini-kirk' ? MINI_KIRK_SPRITE_ROWS : ENEMY_SPRITE_ROWS;
+}

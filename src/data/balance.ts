@@ -33,13 +33,16 @@ export const BALANCE = {
     /**
      * Passivas dos personagens (SPEC-JOGO §3), 2ª rodada de buffs (v1.2.0,
      * out/2026): +~15% nos números principais — o jogo continuava difícil.
-     * HP dos personagens acompanham os stats em characters.ts.
+     * v1.5.0: Marmita (Tombas) nerfada — regen constante virou janela
+     * periódica de 3s; HP do Tombas caiu para 110 e os outros 4 ganharam +15%.
+     * v1.5.2: chances de combate aumentadas (Moscowitta 17%, Beckzito 16%,
+     * Cigarro +15%, Bomba Química 16%).
      */
-    moscowitta: { chance: 7, duration: 3, tickInterval: 1, magnitude: 3 },
-    marmita: { regenPerSecond: 6 },
-    cigarro: { bonusDodgeChance: 12 },
-    beckzito: { chance: 9, duration: 2 },
-    bombaQuimica: { chance: 6, damage: 4, radiusPx: 70 },
+    moscowitta: { chance: 17, duration: 3, tickInterval: 1, magnitude: 3 },
+    marmita: { hpPerSecond: 6, cooldownSeconds: 8, durationSeconds: 3 },
+    cigarro: { bonusDodgeChance: 15 },
+    beckzito: { chance: 16, duration: 2 },
+    bombaQuimica: { chance: 16, damage: 4, radiusPx: 70 },
   },
 
   equipment: {
@@ -72,6 +75,32 @@ export const BALANCE = {
     xpPerLevel: 5,
     /** Ganhos por nível (leves): % sobre o valor atual. */
     levelUp: { maxHpPercent: 6, damagePercent: 6 },
+  },
+
+  /**
+   * Modo infinito (v1.3.0): continuar a run após as 3 fases. Inimigos
+   * ficam mais fortes a cada ciclo — e o multiplicador de sobrevivência
+   * segue crescendo, acumulando pontos de ranking.
+   * v1.6.0: HP/dano dos inimigos sobem BASTANTE por fase infinita.
+   */
+  endless: {
+    /** Crescimento do cap de dificuldade por ciclo completo (3 fases). */
+    difficultyCapPerCycle: 0.5,
+    /** Multiplicador de HP/dano extra por fase infinita (1ª infinita = ×1,5). */
+    statPerEndlessPhase: 0.5,
+  },
+
+  /**
+   * Mini-Kirk (v1.4.0): sub-chefe surpresa com pequena chance de surgir
+   * no meio de qualquer fase. Derrotá-lo rende XP gorda.
+   * v1.6.0: no modo infinito a chance cresce bastante por fase passada
+   * e podem aparecer vários na mesma batalha.
+   */
+  miniKirk: {
+    /** Chance (%) por wave, a partir da 2ª — máx. 1 por batalha na run padrão. */
+    chancePerWave: 8,
+    /** Chance extra (%) por wave para cada fase infinita passada. */
+    endlessChancePerPhase: 15,
   },
 } as const;
 

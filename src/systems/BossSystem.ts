@@ -102,7 +102,10 @@ export class BossSystem {
   }
 
   private tryExecute(ability: BossAbilityDefinition, fighters: readonly Fighter[]): boolean {
-    const players = fighters.filter((f) => f.team === 'PLAYER' && f.alive);
+    // v1.4.2: habilidades respeitam as trilhas — como os ataques normais.
+    const players = fighters.filter(
+      (f) => f.team === 'PLAYER' && f.alive && this.sameLane(f),
+    );
     switch (ability.type) {
       case 'CHARGE': {
         if (players.length === 0) return false;
@@ -184,6 +187,10 @@ export class BossSystem {
       if (player.team !== 'PLAYER' || !player.alive || this.charge.hitTargets.has(player.id)) {
         continue;
       }
+      // v1.4.2: a investida só atinge quem está na trilha do boss.
+      if (!this.sameLane(player)) {
+        continue;
+      }
       if (Math.abs(player.x - this.boss.x) <= contact) {
         this.charge.hitTargets.add(player.id);
         const raw = Math.round(this.boss.stats.damage * this.charge.damageMultiplier);
@@ -202,5 +209,10 @@ export class BossSystem {
 
   get isCharging(): boolean {
     return this.charge !== null;
+  }
+
+  /** Tolerância vertical de trilha para as habilidades (v1.4.2). */
+  private sameLane(player: Fighter): boolean {
+    return Math.abs(player.y - this.boss.y) <= BALANCE.arena.fighterHeight;
   }
 }

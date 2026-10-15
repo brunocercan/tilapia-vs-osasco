@@ -189,6 +189,37 @@ export const BARATA_PEQUENA: EnemyDefinition = {
   onHitEffects: [],
 };
 
+// ---------- Sub-chefe surpresa (v1.4.0) ----------
+
+/**
+ * Mini-Kirk: sub-chefe com pequena chance de aparecer no meio de qualquer
+ * fase (v1.4.0). Cabeção de terno (design pixel art baseado em
+ * /Source-Images/Charlie.png): a cabeçada empurra o alvo e o XP é gordo.
+ */
+export const MINI_KIRK: EnemyDefinition = {
+  id: 'mini-kirk',
+  name: 'Mini-Kirk',
+  color: '#1e2b45',
+  spriteScale: 1.8,
+  baseStats: {
+    maxHp: 180,
+    damage: 11,
+    attackSpeed: 0.85,
+    range: 42,
+    defense: 5,
+    critChance: 5,
+    dodgeChance: 0,
+    moveSpeed: 75,
+  },
+  xpReward: 15,
+  onHitEffects: [
+    // cabeçada: 20% de chance de empurrar o alvo
+    { kind: 'KNOCKBACK', chance: 20, distancePx: 60 },
+  ],
+  // abaixo de 40% de HP fica agressivo
+  lowHpDamageBonus: { belowPercent: 40, percent: 30 },
+};
+
 export const ENEMY_BY_ID: ReadonlyMap<string, EnemyDefinition> = new Map(
   [
     PERNILONGO,
@@ -198,5 +229,6 @@ export const ENEMY_BY_ID: ReadonlyMap<string, EnemyDefinition> = new Map(
     MEIA_PERDIDA,
     RATO_DA_TOCA,
     BARATA_PEQUENA,
+    MINI_KIRK,
   ].map((enemy) => [enemy.id, enemy]),
 );

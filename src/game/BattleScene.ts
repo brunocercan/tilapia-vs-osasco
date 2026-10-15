@@ -1,6 +1,6 @@
 import type { CharacterDefinition, PhaseDefinition } from '../data/types';
 import { BALANCE } from '../data/balance';
-import { ENEMY_BY_ID } from '../data/enemies';
+import { ENEMY_BY_ID, MINI_KIRK } from '../data/enemies';
 import { BOSS_BY_ID } from '../data/bosses';
 import { Fighter } from '../entities/Fighter';
 import { createPlayerFighter } from '../entities/fighterFactory';
@@ -13,11 +13,12 @@ import { PassiveSystem, type PassiveTickEvent } from '../systems/PassiveSystem';
 import { EquipmentSystem, type EquipmentTickEvent } from '../systems/EquipmentSystem';
 import { ExperienceSystem } from '../systems/ExperienceSystem';
 import { LevelSystem } from '../systems/LevelSystem';
+import { ScoreSystem, type ScoreBreakdown } from '../systems/ScoreSystem';
 import { DifficultySystem } from '../systems/DifficultySystem';
 import { BossSystem } from '../systems/BossSystem';
 import { StatusEffectType } from '../entities/StatusEffect';
 import { drawCharacterSprite, type SpriteDrawOptions } from '../render/sprites';
-import { drawEnemySprite, ENEMY_SPRITE_ROWS } from '../render/enemySprites';
+import { drawEnemySprite, enemySpriteRows, CHARACTER_SPRITE_ROWS } from '../render/enemySprites';
 import { PhaseBackdrop } from '../render/PhaseBackdrop';
 
 export interface BattleResult {
@@ -30,6 +31,8 @@ export interface BattleResult {
   /** Tempo total da run até o fim desta batalha. */
   elapsedSeconds: number;
   level: number;
+  /** Fases concluídas até o fim desta batalha (run infinita, v1.3.0). */
+  phasesCompleted: number;
 }
 
 interface DamageNumber {
@@ -82,6 +85,8 @@ export class BattleScene {
   private bossFight: BossFight | null = null;
   private waveIndex = 0;
   private summonCounter = 0;
+  /** v1.4.0/v1.6.0: quantos Mini-Kirks já apareceram nesta batalha. */
+  private miniKirkCount = 0;
   private elapsedSeconds = 0;
   private kills = 0;
   private endTimer: number | null = null;
@@ -144,6 +149,7 @@ export class BattleScene {
           survivors: this.playersAlive(),
           elapsedSeconds: this.runState.elapsedSeconds,
           level: this.runState.level,
+          phasesCompleted: this.runState.phasesCompleted,
         });
       }
       return;
@@ -194,7 +200,10 @@ export class BattleScene {
     if (!definition) {
       throw new Error(`Inimigo ${enemyId} não definido`);
     }
-    const multiplier = DifficultySystem.multiplier(this.runState.elapsedSeconds, this.phase.difficultyCap);
+    // v1.6.0: fases infinitas multiplicam HP/dano dos inimigos além do
+    // escalonamento por tempo (enemyStatMultiplier da fase).
+    const multiplier = DifficultySystem.multiplier(this.runState.elapsedSeconds, this.phase.difficultyCap)
+      * (this.phase.enemyStatMultiplier ?? 1);
     const scaled = { ...definition, baseStats: DifficultySystem.scaleStats(definition.baseStats, multiplier) };
     const fighter = new Fighter(scaled, 'ENEMY', instanceId ?? `${enemyId}-${this.waveIndex}-${index}`, {
       onHitEffects: definition.onHitEffects,
@@ -219,11 +228,38 @@ export class BattleScene {
 
   private spawnWave(enemyIds: readonly string[]): void {
     enemyIds.forEach((enemyId, index) => this.spawnEnemyFighter(enemyId, index));
+    this.maybeSpawnMiniKirk();
+  }
+
+  /**
+   * Mini-Kirk (v1.4.0/v1.6.0): sub-chefe surpresa a partir da 2ª wave.
+   * Na run padrão: chance pequena, no máximo 1 por batalha. No modo
+   * infinito: a chance cresce bastante a cada fase passada e podem
+   * aparecer vários na mesma batalha.
+   */
+  private maybeSpawnMiniKirk(): void {
+    if (this.waveIndex < 1) {
+      return; // só no meio da fase
+    }
+    const endlessNumber = this.phase.endlessNumber ?? 0;
+    if (endlessNumber === 0 && this.miniKirkCount >= 1) {
+      return; // run padrão: nunca dois na mesma batalha
+    }
+    const chance =
+      BALANCE.miniKirk.chancePerWave + endlessNumber * BALANCE.miniKirk.endlessChancePerPhase;
+    if (!this.random.chance(chance)) {
+      return;
+    }
+    this.miniKirkCount += 1;
+    const kirk = this.spawnEnemyFighter(MINI_KIRK.id, 5 + this.miniKirkCount);
+    this.pushEvent({ x: kirk.x, y: kirk.y - 96, text: 'MINI-KIRK!', color: 'rgba(255, 80, 80, 1)' });
   }
 
   private spawnBoss(): void {
     const def = this.bossDefinition;
-    const multiplier = DifficultySystem.multiplier(this.runState.elapsedSeconds, this.phase.difficultyCap);
+    // v1.6.0: o boss da fase infinita também recebe o multiplicador extra.
+    const multiplier = DifficultySystem.multiplier(this.runState.elapsedSeconds, this.phase.difficultyCap)
+      * (this.phase.enemyStatMultiplier ?? 1);
     const scaled = { ...def, baseStats: DifficultySystem.scaleStats(def.baseStats, multiplier) };
     const fighter = new Fighter(scaled, 'ENEMY', `boss-${def.id}`, { xpReward: def.xpReward });
     fighter.facing = -1;
@@ -365,6 +401,19 @@ export class BattleScene {
     return this.bossFight !== null && !this.bossFight.fighter.alive;
   }
 
+  /**
+   * Pontuação ao vivo da run (v1.3.1): mesma fórmula do ScoreSystem,
+   * somando o que já foi contado nesta batalha aos totais da run.
+   */
+  private liveScore(): ScoreBreakdown {
+    return ScoreSystem.calculate({
+      kills: this.runState.kills + this.kills,
+      bossKills: this.runState.bossKills + (this.bossDefeated() ? 1 : 0),
+      elapsedSeconds: this.runState.elapsedSeconds,
+      killScoreBonusPercent: ScoreSystem.killScoreBonusPercent(this.runState.equipmentIds),
+    });
+  }
+
   private pushEvent = (event: CombatEvent | StatusTickEvent | PassiveTickEvent | EquipmentTickEvent): void => {
     if ('aoeRadiusPx' in event && event.aoeRadiusPx) {
       this.explosions.push({ x: event.x, y: event.y, radius: event.aoeRadiusPx, ttl: 0.35, total: 0.35 });
@@ -474,7 +523,9 @@ export class BattleScene {
     const isPlayer = fighter.team === 'PLAYER';
     const bobOffset = Math.sin(this.elapsedSeconds * 8 + fighter.x * 0.05) * 1.5;
     const spriteGroundY = y + h;
-    const spriteUnit = h / (isPlayer ? 22 : ENEMY_SPRITE_ROWS);
+    // Mini-Kirk usa um grid maior (rosto + corpo): pixels menores mantêm
+    // o sprite dentro de [y, y+h] — nome e barra continuam acima da cabeça.
+    const spriteUnit = h / (isPlayer ? CHARACTER_SPRITE_ROWS : enemySpriteRows(fighter.spriteId));
     if (isPlayer) {
       const spriteOptions: SpriteDrawOptions = {
         flip: false, // personagens sempre olham para a direita (inimigos à frente)
@@ -544,10 +595,18 @@ export class BattleScene {
     ctx.textAlign = 'right';
     ctx.fillText(timer, width - 12, 24);
 
+    // Pontos ao vivo (v1.3.1): mesma fórmula do resultado final (§10),
+    // somando os kills já contados nesta batalha e o boss, se caiu.
+    const live = this.liveScore();
+    ctx.font = 'bold 13px "Courier New", monospace';
+    ctx.fillStyle = '#ffd700';
+    ctx.fillText(`PONTOS: ${live.total} ×${live.multiplier.toFixed(2)}`, width - 12, 46);
+
     // XP e nível (SPEC-JOGO §12)
     const maxLevel = this.runState.level >= BALANCE.progression.maxLevel;
     ctx.textAlign = 'left';
     ctx.font = '12px "Courier New", monospace';
+    ctx.fillStyle = '#e8f0e0';
     ctx.fillText(maxLevel ? 'NÍVEL MAX' : `NÍVEL ${this.runState.level}`, 12, height - 28);
 
     const barWidth = 140;

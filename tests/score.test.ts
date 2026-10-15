@@ -58,6 +58,15 @@ describe('ScoreSystem (SPEC-JOGO §10 — inimigos × sobrevivência)', () => {
     expect(comVale.enemies).toBe(Math.round(semVale.enemies * 1.1));
     expect(semVale.enemies).toBe(20 * BALANCE.score.enemyKill);
   });
+
+  it('killScoreBonusPercent soma os bônus de todos os equipamentos da run (v1.3.1)', () => {
+    const equipmentIds = new Map<string, readonly string[]>([
+      ['kiki', ['vale-transporte', 'colar-tilapia']], // +10% e +25%
+      ['tombas', ['tadalinha']],                      // sem bônus de score
+    ]);
+    expect(ScoreSystem.killScoreBonusPercent(equipmentIds)).toBe(35);
+    expect(ScoreSystem.killScoreBonusPercent(new Map())).toBe(0);
+  });
 });
 
 describe('LeaderboardService — validação e offline (SPEC-TECNICA §7/§20)', () => {

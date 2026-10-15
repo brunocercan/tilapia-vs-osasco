@@ -6,6 +6,7 @@ import { ChangelogScreen } from './ChangelogScreen';
 import { CharacterSelectScreen } from './CharacterSelectScreen';
 import { ResultScreen, type ScoreSubmitOutcome } from './ResultScreen';
 import { EquipmentRewardScreen } from './EquipmentRewardScreen';
+import { ContinueScreen, type RunSummary } from './ContinueScreen';
 import { LeaderboardScreen, type LeaderboardFetch } from './LeaderboardScreen';
 import type { CharacterDefinition, EquipmentDefinition } from '../data/types';
 import type { BattleResult } from '../game/BattleScene';
@@ -21,10 +22,18 @@ export interface ScreenManagerHooks {
   getRewardOptions: () => EquipmentDefinition[];
   getTeam: () => readonly CharacterDefinition[];
   getEquipmentNames: (characterId: string) => string[];
-  onEquipmentAssigned: (characterId: string, equipmentId: string) => void;
+  /** Itens equipados de um personagem (v1.3.0: passo de substituição). */
+  getEquippedItems: (characterId: string) => EquipmentDefinition[];
+  onEquipmentAssigned: (characterId: string, equipmentId: string, replacedId?: string) => void;
+  /** v1.6.0: pular a seleção de recompensa (ex.: slots cheios). */
+  onSkipReward: () => void;
   isRankingEnabled: () => boolean;
   fetchLeaderboard: () => Promise<LeaderboardFetch>;
   submitScore: () => Promise<ScoreSubmitOutcome>;
+  /** Resumo da run para a tela "continuar infinito" (v1.3.0). */
+  getRunSummary: () => RunSummary;
+  onContinue: () => void;
+  onFinish: () => void;
 }
 
 /**
@@ -55,6 +64,14 @@ export class ScreenManager {
       hooks.onTeamConfirmed,
       backToMenu,
     ));
+    this.register(root, GameState.ContinueRun, new ContinueScreen(
+      {
+        getRunSummary: hooks.getRunSummary,
+        onContinue: hooks.onContinue,
+        onFinish: hooks.onFinish,
+      },
+      backToMenu,
+    ));
 
     const resultScreen = new ResultScreen({
       getResult: hooks.getLastResult,
@@ -70,7 +87,9 @@ export class ScreenManager {
       getOptions: hooks.getRewardOptions,
       getTeam: hooks.getTeam,
       getEquipmentNames: hooks.getEquipmentNames,
+      getEquippedItems: hooks.getEquippedItems,
       onAssigned: hooks.onEquipmentAssigned,
+      onSkip: hooks.onSkipReward,
     }));
 
     stateManager.onChange((state) => this.sync(state));

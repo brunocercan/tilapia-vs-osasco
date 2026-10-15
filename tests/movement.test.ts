@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MovementSystem, findNearestOpponent } from '../src/systems/MovementSystem';
+import { MovementSystem, findNearestOpponent, LANE_TOLERANCE_PX } from '../src/systems/MovementSystem';
 import { Fighter } from '../src/entities/Fighter';
 import { CHARACTERS } from '../src/data/characters';
 import { PERNILONGO, CAPIVARA_NERVOSA } from '../src/data/enemies';
@@ -81,5 +81,75 @@ describe('MovementSystem — movimentação automática', () => {
 
     system.update([player, enemy], 10, BOUNDS);
     expect(player.x).toBeLessThanOrEqual(BOUNDS.maxX);
+  });
+});
+
+describe('Trilhas separadas (v1.4.2)', () => {
+  const LANE_TOP = 300;
+  const LANE_BOTTOM = 460;
+
+  it('cada unidade ataca o inimigo da própria trilha, mesmo com um mais perto na outra', () => {
+    const player = makePlayer();
+    player.x = 100;
+    player.y = LANE_TOP;
+    const inimigoPertoOutraTrilha = new Fighter(PERNILONGO, 'ENEMY', 'e-perto');
+    inimigoPertoOutraTrilha.x = 150; // mais perto em X...
+    inimigoPertoOutraTrilha.y = LANE_BOTTOM; // ...mas na outra trilha
+    const inimigoMesmaTrilha = new Fighter(CAPIVARA_NERVOSA, 'ENEMY', 'e-trilha');
+    inimigoMesmaTrilha.x = 400;
+    inimigoMesmaTrilha.y = LANE_TOP;
+
+    expect(findNearestOpponent(player, [player, inimigoPertoOutraTrilha, inimigoMesmaTrilha])?.id)
+      .toBe('e-trilha');
+  });
+
+  it('inimigos também priorizam personagens da própria trilha', () => {
+    const enemy = new Fighter(PERNILONGO, 'ENEMY', 'e-1');
+    enemy.x = 900;
+    enemy.y = LANE_BOTTOM;
+    const playerPertoOutraTrilha = makePlayer();
+    playerPertoOutraTrilha.x = 100;
+    playerPertoOutraTrilha.y = LANE_TOP;
+    const playerMesmaTrilha = new Fighter(CHARACTERS[1], 'PLAYER', 'p-2');
+    playerMesmaTrilha.x = 300;
+    playerMesmaTrilha.y = LANE_BOTTOM;
+
+    expect(findNearestOpponent(enemy, [enemy, playerPertoOutraTrilha, playerMesmaTrilha])?.id)
+      .toBe('p-2');
+  });
+
+  it('trilha esvaziou: migra verticalmente até o alvo e volta a atacar', () => {
+    const system = new MovementSystem();
+    const player = makePlayer();
+    player.x = 100;
+    player.y = LANE_TOP;
+    const enemy = new Fighter(CAPIVARA_NERVOSA, 'ENEMY', 'e-1');
+    enemy.x = 140; // dentro do alcance em X...
+    enemy.y = LANE_BOTTOM; // ...mas na trilha de baixo
+
+    system.update([player, enemy], 0.1, BOUNDS);
+    expect(player.targetId).toBe('e-1');
+    expect(player.targetInRange).toBe(false); // ainda descendo
+    expect(player.y).toBeGreaterThan(LANE_TOP); // caminhou para a trilha do alvo
+    expect(player.x).toBe(100); // X já alinhado: só desce
+
+    for (let i = 0; i < 60 && !player.targetInRange; i++) {
+      system.update([player, enemy], 0.1, BOUNDS);
+    }
+    expect(player.targetInRange).toBe(true); // chegou na trilha e voltou a atacar
+    expect(Math.abs(player.y - enemy.y)).toBeLessThanOrEqual(LANE_TOLERANCE_PX);
+  });
+
+  it('migração vertical nunca ultrapassa a trilha do alvo', () => {
+    const system = new MovementSystem();
+    const player = makePlayer();
+    player.x = 100;
+    player.y = LANE_TOP;
+    const enemy = new Fighter(CAPIVARA_NERVOSA, 'ENEMY', 'e-1');
+    enemy.x = 140;
+    enemy.y = LANE_BOTTOM;
+
+    system.update([player, enemy], 10, BOUNDS); // passo gigante: trava na trilha
+    expect(player.y).toBe(LANE_BOTTOM);
   });
 });

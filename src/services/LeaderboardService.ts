@@ -25,10 +25,14 @@ export type SubmitResult = { ok: true } | { ok: false; error: string };
  * Consulta principal espelha a SPEC-TECNICA §6 (score DESC, tempo ASC).
  */
 export class LeaderboardService {
-  /** Limites plausíveis (SPEC-TECNICA §7) — espelhados nas CHECKs do SQL. */
-  static readonly MAX_PLAUSIBLE_SCORE = 20000;
+  /**
+   * Limites plausíveis (SPEC-TECNICA §7) — espelhados nas CHECKs do SQL.
+   * v1.3.0: ampliado para 100.000 — runs infinitas acumulam sem parar.
+   */
+  static readonly MAX_PLAUSIBLE_SCORE = 100_000;
   static readonly MIN_RUN_MS = 30_000;
-  static readonly MAX_RUN_MS = 1_800_000;
+  /** v1.3.0: runs infinitas podem passar de 30 min — até 2 horas. */
+  static readonly MAX_RUN_MS = 7_200_000;
   private static readonly TABLE = 'leaderboard';
 
   /**

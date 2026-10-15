@@ -6,7 +6,7 @@ import { BattleScene, type BattleResult } from './BattleScene';
 import { RandomService } from '../services/RandomService';
 import { ScreenManager } from '../ui/ScreenManager';
 import type { CharacterDefinition, EquipmentDefinition } from '../data/types';
-import { PHASES } from '../data/phases';
+import { PHASES, endlessPhaseFor, isRankVictory } from '../data/phases';
 import { EQUIPMENT_BY_ID } from '../data/equipment';
 import { EquipmentSystem } from '../systems/EquipmentSystem';
 import { ScoreSystem, type ScoreBreakdown } from '../systems/ScoreSystem';
@@ -72,14 +72,36 @@ export class Game {
       getEquipmentNames: (characterId) =>
         (this.runState.equipmentIds.get(characterId) ?? [])
           .map((id) => EQUIPMENT_BY_ID.get(id)?.name ?? id),
-      onEquipmentAssigned: (characterId, equipmentId) => {
+      getEquippedItems: (characterId) =>
+        (this.runState.equipmentIds.get(characterId) ?? [])
+          .map((id) => EQUIPMENT_BY_ID.get(id))
+          .filter((equipment): equipment is EquipmentDefinition => Boolean(equipment)),
+      onEquipmentAssigned: (characterId, equipmentId, replacedId) => {
         const current = this.runState.equipmentIds.get(characterId) ?? [];
-        this.runState.equipmentIds.set(characterId, [...current, equipmentId]);
+        const kept = replacedId ? current.filter((id) => id !== replacedId) : current;
+        this.runState.equipmentIds.set(characterId, [...kept, equipmentId]);
         this.stateManager.setState(GameState.Battle);
       },
+      // v1.6.0: pular a recompensa — segue direto para a próxima batalha.
+      onSkipReward: () => this.stateManager.setState(GameState.Battle),
       isRankingEnabled: () => this.leaderboard.enabled,
       fetchLeaderboard: () => this.leaderboard.getTopEntries(),
       submitScore: () => this.submitScore(),
+      // Modo infinito (v1.3.0): continuar acumulando ou encerrar a run.
+      getRunSummary: () => ({
+        kills: this.runState.kills,
+        bossKills: this.runState.bossKills,
+        phasesCompleted: this.runState.phasesCompleted,
+        elapsedSeconds: this.runState.elapsedSeconds,
+      }),
+      onContinue: () => {
+        this.rewardOptions = EquipmentSystem.rollOptions(this.random);
+        this.stateManager.setState(GameState.EquipmentReward); // recompensa → batalha
+      },
+      onFinish: () => {
+        this.lastBreakdown = this.computeBreakdown();
+        this.stateManager.setState(GameState.Victory);
+      },
     });
 
     this.stateManager.onChange((state, previous) => this.onStateChange(state, previous));
@@ -111,11 +133,10 @@ export class Game {
       this.stateManager.setState(GameState.CharacterSelect);
       return;
     }
-    const phase = PHASES[this.battlesCompleted];
-    if (!phase) {
-      this.stateManager.setState(GameState.Victory);
-      return;
-    }
+    // Fases 1-3 da run padrão; a partir da 4ª, o modo infinito gera
+    // fases cada vez mais difíceis (v1.3.0) — a run não termina mais
+    // por falta de fase, só por escolha ou derrota.
+    const phase = endlessPhaseFor(this.battlesCompleted);
     this.battle = new BattleScene(this.selectedTeam, phase, this.random, this.runState, (result) => {
       this.lastResult = result;
       this.runState.kills += result.kills;
@@ -128,16 +149,15 @@ export class Game {
         return;
       }
 
-      // Boss derrotado → recompensa de equipamento (SPEC-JOGO §12);
-      // após o 3º boss a run termina em vitória.
+      // Boss derrotado → recompensa de equipamento (SPEC-JOGO §12).
       this.battlesCompleted += 1;
       this.runState.phasesCompleted += 1;
-      if (this.battlesCompleted >= PHASES.length) {
-        this.lastBreakdown = this.computeBreakdown();
-        this.stateManager.setState(GameState.Victory);
-      } else {
+      if (this.battlesCompleted < PHASES.length) {
         this.rewardOptions = EquipmentSystem.rollOptions(this.random);
         this.stateManager.setState(GameState.EquipmentReward);
+      } else {
+        // Fim da run padrão e de cada fase infinita: continuar ou encerrar.
+        this.stateManager.setState(GameState.ContinueRun);
       }
     });
     this.battle.layout(this.width, this.height);
@@ -145,15 +165,11 @@ export class Game {
 
   /** Pontuação da run (SPEC-JOGO §10), calculada uma vez ao terminar. */
   private computeBreakdown(): ScoreBreakdown {
-    const killScoreBonusPercent = [...this.runState.equipmentIds.values()]
-      .flat()
-      .reduce((sum, id) => sum + (EQUIPMENT_BY_ID.get(id)?.scoreKillBonusPercent ?? 0), 0);
-
     return ScoreSystem.calculate({
       kills: this.runState.kills,
       bossKills: this.runState.bossKills,
       elapsedSeconds: this.runState.elapsedSeconds,
-      killScoreBonusPercent,
+      killScoreBonusPercent: ScoreSystem.killScoreBonusPercent(this.runState.equipmentIds),
     });
   }
 
@@ -187,7 +203,8 @@ export class Game {
       player_name: playerName,
       score: this.lastBreakdown.total,
       run_time_ms: Math.round(this.runState.elapsedSeconds * 1000),
-      victory: this.lastResult.victory,
+      // v1.5.1: run que entrou no modo infinito também conta como vitória.
+      victory: isRankVictory(this.lastResult.victory, this.runState.phasesCompleted),
     });
     if (!submit.ok) {
       return { ok: false, error: submit.error };

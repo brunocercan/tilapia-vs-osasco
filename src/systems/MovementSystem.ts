@@ -7,34 +7,57 @@ export interface ArenaBounds {
 }
 
 /**
- * Encontra o oponente vivo mais próximo (alvo do combate — SPEC-TECNICA §15).
- * Unidade confusa (passiva Beckzito — SPEC-JOGO §3) passa a mirar nos
- * próprios aliados próximos.
+ * Tolerância vertical para considerar duas unidades na MESMA trilha
+ * (lane) — bem menor que a distância entre trilhas do balanceamento.
  */
-export function findNearestOpponent(fighter: Fighter, fighters: readonly Fighter[]): Fighter | null {
+export const LANE_TOLERANCE_PX = 20;
+
+/** Unidade confusa (passiva Beckzito — SPEC-JOGO §3) mira nos aliados. */
+function isPotentialTarget(fighter: Fighter, other: Fighter): boolean {
   const confused = fighter.hasStatus(StatusEffectType.Confusion);
-  let nearest: Fighter | null = null;
-  let nearestDistance = Infinity;
-  for (const other of fighters) {
-    if (other === fighter || !other.alive) {
-      continue;
-    }
-    const isTarget = confused ? other.team === fighter.team : other.team !== fighter.team;
-    if (!isTarget) {
-      continue;
-    }
-    const distance = Math.abs(other.x - fighter.x);
-    if (distance < nearestDistance) {
-      nearestDistance = distance;
-      nearest = other;
-    }
-  }
-  return nearest;
+  return confused ? other.team === fighter.team : other.team !== fighter.team;
+}
+
+function xDistance(a: Fighter, b: Fighter): number {
+  return Math.abs(a.x - b.x);
+}
+
+function sameLane(a: Fighter, b: Fighter): boolean {
+  return Math.abs(a.y - b.y) <= LANE_TOLERANCE_PX;
 }
 
 /**
- * Movimentação 100% automática (SPEC-JOGO §13): a unidade anda em direção
- * ao oponente mais próximo até entrar no alcance de ataque.
+ * Alvo do combate (SPEC-TECNICA §15), com trilhas separadas (v1.4.2):
+ * 1. oponente vivo mais próximo **na própria trilha**;
+ * 2. sem ninguém na trilha? o mais próximo de qualquer trilha — a unidade
+ *    então caminha (inclusive verticalmente) até a trilha dele.
+ */
+export function findNearestOpponent(fighter: Fighter, fighters: readonly Fighter[]): Fighter | null {
+  let nearestSameLane: Fighter | null = null;
+  let nearestSameLaneDistance = Infinity;
+  let nearestAnyLane: Fighter | null = null;
+  let nearestAnyLaneDistance = Infinity;
+  for (const other of fighters) {
+    if (other === fighter || !other.alive || !isPotentialTarget(fighter, other)) {
+      continue;
+    }
+    const distance = xDistance(fighter, other);
+    if (distance < nearestAnyLaneDistance) {
+      nearestAnyLaneDistance = distance;
+      nearestAnyLane = other;
+    }
+    if (sameLane(fighter, other) && distance < nearestSameLaneDistance) {
+      nearestSameLaneDistance = distance;
+      nearestSameLane = other;
+    }
+  }
+  return nearestSameLane ?? nearestAnyLane;
+}
+
+/**
+ * Movimentação 100% automática (SPEC-TECNICA §13): a unidade anda em direção
+ * ao oponente mais próximo até entrar no alcance de ataque — cada trilha
+ * luta com a própria; quando a trilha esvazia, a unidade migra (v1.4.2).
  */
 export class MovementSystem {
   update(fighters: readonly Fighter[], deltaSeconds: number, bounds: ArenaBounds): void {
@@ -51,8 +74,21 @@ export class MovementSystem {
       }
 
       fighter.facing = target.x >= fighter.x ? 1 : -1;
-      const distance = Math.abs(target.x - fighter.x);
-      if (distance <= fighter.stats.range) {
+      const aligned = sameLane(fighter, target);
+      const distance = xDistance(fighter, target);
+
+      // Alvo em outra trilha: caminha verticalmente até a trilha dele,
+      // sem ultrapassar a posição do alvo.
+      if (!aligned) {
+        const dy = target.y - fighter.y;
+        const step = fighter.stats.moveSpeed * deltaSeconds;
+        fighter.y += Math.abs(dy) <= step ? dy : Math.sign(dy) * step;
+        if (distance <= fighter.stats.range) {
+          continue; // já alinhado em X: falta só chegar na trilha
+        }
+      }
+
+      if (aligned && distance <= fighter.stats.range) {
         fighter.targetInRange = true;
         continue;
       }

@@ -1,6 +1,7 @@
 import { BaseScreen, createButton, createTitle } from './Screen';
 import type { BattleResult } from '../game/BattleScene';
 import type { ScoreBreakdown } from '../systems/ScoreSystem';
+import { isRankVictory } from '../data/phases';
 import { sanitizePlayerName, PLAYER_NAME_MAX_LENGTH } from '../utils/sanitize';
 
 export type ScoreSubmitOutcome =
@@ -87,9 +88,16 @@ export class ResultScreen extends BaseScreen {
     const result = this.hooks.getResult();
     const breakdown = this.hooks.getBreakdown();
     const victory = result?.victory ?? false;
+    // v1.5.1: morrer no modo infinito não é derrota — a run padrão foi
+    // concluída (e o rank registra como vitória).
+    const reachedEndless = result ? isRankVictory(false, result.phasesCompleted) : false;
 
-    this.titleElement.textContent = victory ? 'VITÓRIA!' : 'DERROTA';
-    this.titleElement.style.color = victory ? 'var(--color-accent)' : '#d9534f';
+    this.titleElement.textContent = victory
+      ? 'VITÓRIA!'
+      : reachedEndless
+        ? 'FIM DA RUN INFINITA!'
+        : 'DERROTA';
+    this.titleElement.style.color = victory || reachedEndless ? 'var(--color-accent)' : '#d9534f';
 
     this.scoreElement.textContent = breakdown ? `Pontuação: ${breakdown.total}` : '';
 
@@ -112,7 +120,7 @@ export class ResultScreen extends BaseScreen {
       const equipment = this.hooks.getEquipmentSummary();
       this.detailsElement.textContent =
         `Tempo: ${formatTime(result.elapsedSeconds)} · Nível: ${result.level} · ` +
-        `Sobreviventes: ${result.survivors}/2 · Inimigos: ${result.kills}` +
+        `Sobreviventes: ${result.survivors}/2 · Inimigos: ${result.kills} · Fases: ${result.phasesCompleted}` +
         (equipment.length > 0 ? ` · Equipamentos: ${equipment.join(', ')}` : '');
     }
 

@@ -50,8 +50,13 @@ export interface PassiveDefinition {
   description: string;
   /** Bônus de atributo aplicados na criação do personagem (ex.: Cigarro). */
   statModifiers?: Partial<Stats>;
-  /** Regeneração contínua de HP por segundo (ex.: Marmita). */
+  /** Regeneração contínua de HP por segundo (ex.: equipamentos). */
   hpRegenPerSecond?: number;
+  /**
+   * Regeneração em janelas periódicas (Marmita/Tombas, v1.5.0): ativa por
+   * `durationSeconds` a cada `cooldownSeconds` — em vez de constante.
+   */
+  periodicRegen?: { hpPerSecond: number; cooldownSeconds: number; durationSeconds: number };
   /** Efeitos ao acertar ataques (ex.: Moscowitta, Beckzito, Bomba Química). */
   onHitEffects?: OnHitEffectDefinition[];
 }
@@ -127,6 +132,13 @@ export interface PhaseDefinition {
   bossId: string;
   /** Teto do multiplicador de dificuldade nesta fase (§7). */
   difficultyCap: number;
+  /** Fase infinita (v1.6.0): número da fase infinita (1 = FASE 4). */
+  endlessNumber?: number;
+  /**
+   * Multiplicador extra de HP/dano de TODOS os inimigos da fase
+   * (v1.6.0) — aplica-se junto ao escalonamento por tempo.
+   */
+  enemyStatMultiplier?: number;
 }
 
 /**

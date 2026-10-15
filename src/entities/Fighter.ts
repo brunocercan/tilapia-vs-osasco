@@ -11,6 +11,20 @@ export interface FighterExtras {
 export type Team = 'PLAYER' | 'ENEMY';
 
 /**
+ * Estado da regeneração periódica (Marmita/Tombas, v1.5.0):
+ * regen ativo apenas dentro da janela de `durationSeconds`.
+ */
+export interface PeriodicRegenState {
+  hpPerSecond: number;
+  cooldownSeconds: number;
+  durationSeconds: number;
+  /** Tempo até a próxima ativação da janela. */
+  timeToActivation: number;
+  /** Tempo restante da janela ativa. */
+  activeRemaining: number;
+}
+
+/**
  * Unidade de combate em tempo de execução (personagem ou inimigo).
  * Uma única classe para os dois lados: o comportamento difere apenas pelos dados.
  */
@@ -41,6 +55,8 @@ export class Fighter {
 
   /** Regeneração contínua de HP/s (passiva Marmita, equipamentos). */
   hpRegenPerSecond = 0;
+  /** Passiva Marmita (v1.5.0): janela periódica de regeneração. */
+  periodicRegen: PeriodicRegenState | null = null;
   /** Bônus de regeneração abaixo de um limiar de HP (Queijo). */
   hpRegenLowHpThresholdPercent = 0;
   hpRegenLowHpBonusPerSecond = 0;
