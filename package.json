@@ -1,0 +1,25 @@
+{
+  "name": "tilapia-vs-osasco",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Auto battler 2D web do grupo Tilapia — combate 100% automático.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^9",
+    "eslint": "^9",
+    "typescript": "^5",
+    "typescript-eslint": "^8",
+    "vite": "^7",
+    "vitest": "^3"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.117.3"
+  }
+}

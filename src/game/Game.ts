@@ -1,0 +1,256 @@
+import { GAME_CONFIG } from '../config/gameConfig';
+import { GameLoop } from './GameLoop';
+import { GameState, GameStateManager } from './GameState';
+import { Background } from './Background';
+import { BattleScene, type BattleResult } from './BattleScene';
+import { RandomService } from '../services/RandomService';
+import { ScreenManager } from '../ui/ScreenManager';
+import type { CharacterDefinition, EquipmentDefinition } from '../data/types';
+import { PHASES } from '../data/phases';
+import { EQUIPMENT_BY_ID } from '../data/equipment';
+import { EquipmentSystem } from '../systems/EquipmentSystem';
+import { ScoreSystem, type ScoreBreakdown } from '../systems/ScoreSystem';
+import { RunState } from '../entities/RunState';
+import { LeaderboardService } from '../services/LeaderboardService';
+import type { ScoreSubmitOutcome } from '../ui/ResultScreen';
+import { CharlieEasterEgg } from './CharlieEasterEgg';
+
+/** Intervalo mínimo entre envios de score (anti-spam local — SPEC-TECNICA §7). */
+const SUBMIT_THROTTLE_MS = 10_000;
+const LAST_SUBMIT_KEY = 'tilapia:last-score-submit';
+
+/**
+ * Orquestrador do jogo: canvas, game loop, máquina de estados,
+ * telas HTML (menus), cena de batalha ativa e ranking.
+ */
+export class Game {
+  private readonly ctx: CanvasRenderingContext2D;
+  private readonly stateManager = new GameStateManager();
+  private readonly random = new RandomService();
+  private readonly background: Background;
+  private readonly loop: GameLoop;
+  private readonly leaderboard: LeaderboardService;
+  private readonly overlayCtx: CanvasRenderingContext2D;
+  private readonly easterEgg: CharlieEasterEgg;
+
+  private battle: BattleScene | null = null;
+  private selectedTeam: CharacterDefinition[] = [];
+  private playerName = 'Anônimo';
+  private lastResult: BattleResult | null = null;
+  private lastBreakdown: ScoreBreakdown | null = null;
+  private runState = new RunState();
+  private battlesCompleted = 0;
+  private rewardOptions: EquipmentDefinition[] = [];
+  private scoreSubmittedForRun = false;
+
+  constructor(
+    private readonly canvas: HTMLCanvasElement,
+    uiRoot: HTMLElement,
+    private readonly overlayCanvas?: HTMLCanvasElement,
+  ) {
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      throw new Error('Canvas 2D não suportado neste navegador');
+    }
+    this.ctx = ctx;
+
+    if (overlayCanvas) {
+      const overlay = overlayCanvas.getContext('2d');
+      if (!overlay) {
+        throw new Error('Canvas 2D (overlay) não suportado neste navegador');
+      }
+      this.overlayCtx = overlay;
+    } else {
+      this.overlayCtx = ctx;
+    }
+    this.easterEgg = new CharlieEasterEgg(this.random);
+
+    this.background = new Background(this.random);
+    this.leaderboard = new LeaderboardService();
+
+    new ScreenManager(uiRoot, this.stateManager, {
+      onTeamConfirmed: (team, playerName) => {
+        this.selectedTeam = team;
+        this.playerName = playerName;
+        this.runState = new RunState(); // nova run: XP, nível e equipamentos zerados
+        this.battlesCompleted = 0;
+        this.lastBreakdown = null;
+        this.scoreSubmittedForRun = false;
+        this.stateManager.setState(GameState.Battle);
+      },
+      getLastResult: () => this.lastResult,
+      getScoreBreakdown: () => this.lastBreakdown,
+      getPlayerName: () => this.playerName,
+      getEquipmentSummary: () => this.equipmentSummary(),
+      getRewardOptions: () => this.rewardOptions,
+      getTeam: () => this.selectedTeam,
+      getEquipmentNames: (characterId) =>
+        (this.runState.equipmentIds.get(characterId) ?? [])
+          .map((id) => EQUIPMENT_BY_ID.get(id)?.name ?? id),
+      onEquipmentAssigned: (characterId, equipmentId) => {
+        const current = this.runState.equipmentIds.get(characterId) ?? [];
+        this.runState.equipmentIds.set(characterId, [...current, equipmentId]);
+        this.stateManager.setState(GameState.Battle);
+      },
+      isRankingEnabled: () => this.leaderboard.enabled,
+      fetchLeaderboard: () => this.leaderboard.getTopEntries(),
+      submitScore: () => this.submitScore(),
+    });
+
+    this.stateManager.onChange((state, previous) => this.onStateChange(state, previous));
+
+    this.loop = new GameLoop(
+      (deltaSeconds) => this.update(deltaSeconds),
+      () => this.render(),
+      GAME_CONFIG.maxDeltaMs,
+    );
+
+    window.addEventListener('resize', () => this.resize());
+    this.resize();
+  }
+
+  start(): void {
+    this.loop.start();
+  }
+
+  private onStateChange(state: GameState, previous: GameState): void {
+    if (state === GameState.Battle) {
+      this.startBattle();
+    } else if (previous === GameState.Battle && state !== GameState.EquipmentReward) {
+      this.battle = null;
+    }
+  }
+
+  private startBattle(): void {
+    if (this.selectedTeam.length === 0) {
+      this.stateManager.setState(GameState.CharacterSelect);
+      return;
+    }
+    const phase = PHASES[this.battlesCompleted];
+    if (!phase) {
+      this.stateManager.setState(GameState.Victory);
+      return;
+    }
+    this.battle = new BattleScene(this.selectedTeam, phase, this.random, this.runState, (result) => {
+      this.lastResult = result;
+      this.runState.kills += result.kills;
+      this.runState.bossKills += result.bossKills;
+      // runState.elapsedSeconds já é acumulado pela própria batalha
+
+      if (!result.victory) {
+        this.lastBreakdown = this.computeBreakdown(result.survivors);
+        this.stateManager.setState(GameState.Defeat);
+        return;
+      }
+
+      // Boss derrotado → recompensa de equipamento (SPEC-JOGO §12);
+      // após o 3º boss a run termina em vitória.
+      this.battlesCompleted += 1;
+      this.runState.phasesCompleted += 1;
+      if (this.battlesCompleted >= PHASES.length) {
+        this.lastBreakdown = this.computeBreakdown(result.survivors);
+        this.stateManager.setState(GameState.Victory);
+      } else {
+        this.rewardOptions = EquipmentSystem.rollOptions(this.random);
+        this.stateManager.setState(GameState.EquipmentReward);
+      }
+    });
+    this.battle.layout(this.width, this.height);
+  }
+
+  /** Pontuação da run (SPEC-JOGO §10), calculada uma vez ao terminar. */
+  private computeBreakdown(survivors: number): ScoreBreakdown {
+    const phaseScoreBonusPercent = [...this.runState.equipmentIds.values()]
+      .flat()
+      .reduce((sum, id) => sum + (EQUIPMENT_BY_ID.get(id)?.scorePhaseBonusPercent ?? 0), 0);
+
+    return ScoreSystem.calculate({
+      kills: this.runState.kills,
+      bossKills: this.runState.bossKills,
+      level: this.runState.level,
+      survivors,
+      phasesCompleted: this.runState.phasesCompleted,
+      elapsedSeconds: this.runState.elapsedSeconds,
+      phaseScoreBonusPercent,
+    });
+  }
+
+  private equipmentSummary(): string[] {
+    return [...this.runState.equipmentIds.entries()].flatMap(([characterId, ids]) =>
+      ids.map((id) => `${EQUIPMENT_BY_ID.get(id)?.name ?? id} (${characterId})`),
+    );
+  }
+
+  /** Envia o score da run atual uma única vez (SPEC-TECNICA §7/§20). */
+  private async submitScore(): Promise<ScoreSubmitOutcome> {
+    if (!this.leaderboard.enabled || !this.lastBreakdown || !this.lastResult) {
+      return { ok: false, error: 'Ranking indisponível' };
+    }
+    if (this.scoreSubmittedForRun) {
+      return { ok: false, error: 'Score desta run já foi enviado' };
+    }
+
+    // Anti-spam local: intervalo mínimo entre envios.
+    const lastSubmitAt = Number(localStorage.getItem(LAST_SUBMIT_KEY) ?? 0);
+    if (Date.now() - lastSubmitAt < SUBMIT_THROTTLE_MS) {
+      return { ok: false, error: 'Aguarde antes de enviar novamente' };
+    }
+
+    const submit = await this.leaderboard.submitScore({
+      player_name: this.playerName,
+      score: this.lastBreakdown.total,
+      run_time_ms: Math.round(this.runState.elapsedSeconds * 1000),
+      victory: this.lastResult.victory,
+    });
+    if (!submit.ok) {
+      return { ok: false, error: submit.error };
+    }
+
+    this.scoreSubmittedForRun = true;
+    localStorage.setItem(LAST_SUBMIT_KEY, String(Date.now()));
+    const position = await this.leaderboard.getRankPosition(this.lastBreakdown.total);
+    return { ok: true, position };
+  }
+
+  private resize(): void {
+    this.dpr = window.devicePixelRatio || 1;
+    this.canvas.width = Math.floor(this.canvas.clientWidth * this.dpr);
+    this.canvas.height = Math.floor(this.canvas.clientHeight * this.dpr);
+    if (this.overlayCanvas) {
+      this.overlayCanvas.width = this.canvas.width;
+      this.overlayCanvas.height = this.canvas.height;
+    }
+    this.width = this.canvas.clientWidth;
+    this.height = this.canvas.clientHeight;
+    this.battle?.layout(this.width, this.height);
+  }
+
+  private dpr = 1;
+  /** Tamanho lógico (CSS pixels) da área de jogo. */
+  private width = 0;
+  private height = 0;
+
+  private update(deltaSeconds: number): void {
+    this.background.update(deltaSeconds, this.width, this.height);
+    this.easterEgg.update(deltaSeconds); // roda em qualquer estado/tela
+    if (this.stateManager.getState() === GameState.Battle) {
+      this.battle?.update(deltaSeconds);
+    }
+  }
+
+  private render(): void {
+    // Escala para devicePixelRatio; toda a lógica usa CSS pixels.
+    this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    this.ctx.imageSmoothingEnabled = false;
+
+    this.background.render(this.ctx, this.width, this.height);
+    if (this.stateManager.getState() === GameState.Battle) {
+      this.battle?.render(this.ctx);
+    }
+
+    // Easter egg por cima de tudo, em qualquer tela
+    this.overlayCtx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    this.overlayCtx.imageSmoothingEnabled = false;
+    this.easterEgg.render(this.overlayCtx, this.width, this.height);
+  }
+}

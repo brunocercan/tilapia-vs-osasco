@@ -1,0 +1,31 @@
+import { BaseScreen, createButton, createTitle } from './Screen';
+
+const HOW_TO_PLAY_ITEMS: readonly string[] = [
+  'Escolha 2 dos 5 amigos do grupo Tilápia.',
+  'O combate é 100% automático — seu time luta sozinho.',
+  'Vença os inimigos de cada fase e derrote o boss.',
+  'A cada boss derrotado, escolha 1 entre 2 equipamentos.',
+  'Sobreviva às 3 fases: Matão, Ruas de Osasco e Toca.',
+  'Quanto mais rápida a run, maior a pontuação no ranking!',
+];
+
+/** Tela "Como Jogar" (SPEC-JOGO §12/§13). */
+export class HowToPlayScreen extends BaseScreen {
+  constructor(onBack: () => void) {
+    super('screen--howto');
+
+    const list = document.createElement('ul');
+    list.className = 'screen__list';
+    for (const item of HOW_TO_PLAY_ITEMS) {
+      const li = document.createElement('li');
+      li.textContent = item;
+      list.append(li);
+    }
+
+    this.element.append(
+      createTitle('Como Jogar', 2),
+      list,
+      createButton('Voltar', onBack),
+    );
+  }
+}

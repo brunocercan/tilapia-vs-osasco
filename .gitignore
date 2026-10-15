@@ -1,0 +1,49 @@
+# Pastas com images source e Specs da IA
+/Agents
+
+/Source-Images
+
+# SPECs do jogo (somente leitura para IAs) — README é exceção e vai público
+*.md
+!README.md
+
+# Node / build
+node_modules/
+dist/
+
+# Variáveis de ambiente (nunca commitar keys)
+.env
+.env.*
+*.local
+
+# Banco — schema e migrations ficam locais
+supabase/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Testes / cobertura
+coverage/
+
+# Cache de build
+.vite/
+*.tsbuildinfo
+
+# Chaves e certificados (se aparecerem, nunca commitar)
+*.pem
+*.key
+*.crt
+
+# Editores / IDE
+.vscode/
+.idea/
+*.swp
+
+# Sistema operacional (Windows / macOS)
+Thumbs.db
+Desktop.ini
+.DS_Store
