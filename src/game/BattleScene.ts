@@ -93,7 +93,7 @@ export class BattleScene {
   constructor(
     characters: readonly CharacterDefinition[],
     private readonly phase: PhaseDefinition,
-    random: RandomService,
+    private readonly random: RandomService,
     private readonly runState: RunState,
     private readonly onEnd: (result: BattleResult) => void,
   ) {
@@ -304,6 +304,7 @@ export class BattleScene {
   /**
    * Aplica um nível ganho a TODOS os personagens: cura completa e,
    * se um deles já estiver morto, renasce com a vida cheia.
+   * Cada nível ganho ainda roda a chance de vir um item lendário (v1.2.0).
    */
   private applyLevelUp(): void {
     const newLevel = this.runState.level;
@@ -323,6 +324,41 @@ export class BattleScene {
         color: 'rgba(126, 200, 80, 1)',
       });
     }
+    this.maybeGrantLegendary();
+  }
+
+  /**
+   * Item lendário no level up (v1.2.0): chance por nível ganho; se rolar,
+   * equipa automaticamente em quem tiver menos itens (persiste na run).
+   */
+  private maybeGrantLegendary(): void {
+    const legendary = EquipmentSystem.rollLegendary(this.random);
+    if (!legendary) {
+      return;
+    }
+    const players = this.fighters.filter(
+      (f) => f.team === 'PLAYER' && f.equipped.length < BALANCE.equipment.maxSlots,
+    );
+    if (players.length === 0) {
+      return; // slots cheios: o lendário não vem
+    }
+    const minItems = Math.min(...players.map((p) => p.equipped.length));
+    const target = this.random.pick(players.filter((p) => p.equipped.length === minItems));
+    if (!EquipmentSystem.apply(target, legendary)) {
+      return;
+    }
+
+    // Persiste na run: as próximas fases reequipam ao criar os Fighters.
+    const characterId = target.id.replace(/^player-/, '');
+    const current = this.runState.equipmentIds.get(characterId) ?? [];
+    this.runState.equipmentIds.set(characterId, [...current, legendary.id]);
+
+    this.pushEvent({
+      x: target.x,
+      y: target.y - 78,
+      text: `★ ${legendary.name}!`,
+      color: 'rgba(255, 215, 0, 1)',
+    });
   }
 
   private bossDefeated(): boolean {

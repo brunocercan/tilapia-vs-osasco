@@ -1,5 +1,5 @@
 import { BALANCE } from '../data/balance';
-import { EQUIPMENTS, EQUIPMENT_BY_ID } from '../data/equipment';
+import { COMMON_EQUIPMENTS, EQUIPMENT_BY_ID, LEGENDARY_EQUIPMENTS } from '../data/equipment';
 import type { EquipmentDefinition, EquippedItem, Stats } from '../data/types';
 import type { Fighter } from '../entities/Fighter';
 import { StatusEffectType } from '../entities/StatusEffect';
@@ -21,15 +21,34 @@ export const REWARD_OPTION_COUNT = 2;
  * Tetos globais: esquiva 50%, crítico 60%, vel. de ataque +100% sobre a base.
  */
 export class EquipmentSystem {
-  /** Sorteia opções distintas de equipamento para a recompensa de boss. */
+  /**
+   * Sorteia opções distintas para a recompensa de boss (§4). Com chance
+   * `legendaryChanceOnBoss`, uma das opções é um item lendário (v1.2.0).
+   */
   static rollOptions(random: RandomService, count: number = REWARD_OPTION_COUNT): EquipmentDefinition[] {
-    const pool = [...EQUIPMENTS];
     const options: EquipmentDefinition[] = [];
+
+    if (LEGENDARY_EQUIPMENTS.length > 0 && random.chance(BALANCE.equipment.legendaryChanceOnBoss)) {
+      options.push(random.pick(LEGENDARY_EQUIPMENTS));
+    }
+
+    const pool = [...COMMON_EQUIPMENTS];
     while (pool.length > 0 && options.length < count) {
       const index = random.randomInt(0, pool.length - 1);
       options.push(pool.splice(index, 1)[0]);
     }
     return options;
+  }
+
+  /**
+   * Sorteia um item lendário direto (v1.2.0): chance por nível ganho.
+   * Retorna null quando a sorte falha ou não há lendários no catálogo.
+   */
+  static rollLegendary(random: RandomService): EquipmentDefinition | null {
+    if (LEGENDARY_EQUIPMENTS.length === 0 || !random.chance(BALANCE.equipment.legendaryChanceOnLevelUp)) {
+      return null;
+    }
+    return random.pick(LEGENDARY_EQUIPMENTS);
   }
 
   static applyByIds(fighter: Fighter, equipmentIds: readonly string[]): EquippedItem[] {

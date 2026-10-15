@@ -5,11 +5,12 @@ import type { CharacterDefinition } from './types';
 /**
  * Os 5 amigos do grupo Tilápia (SPEC-JOGO §3).
  * Passivas são dados com parte descritiva (UI) e mecânica (sistemas):
- * - Moscowitta (Kiki): 3% de chance de Veneno (3 dano/s por 3s)
- * - Marmita (Tombas): +3 HP/s de regeneração
- * - Cigarro (Veronezio): +5% de esquiva
- * - Beckzito (Marcola): +5% de chance de Confusão (2s)
- * - Bomba Química (Mattioni): 3% de chance de dano em área
+ * - Moscowitta (Kiki): 7% de chance de Veneno (3 dano/s por 3s)
+ * - Marmita (Tombas): +6 HP/s de regeneração
+ * - Cigarro (Veronezio): +12% de esquiva
+ * - Beckzito (Marcola): +9% de chance de Confusão (2s)
+ * - Bomba Química (Mattioni): 6% de chance de dano em área
+ * (v1.2.0: passivas +~15%; descrições lêem os valores do BALANCE.)
  */
 export const CHARACTERS: readonly CharacterDefinition[] = [
   {
@@ -29,7 +30,7 @@ export const CHARACTERS: readonly CharacterDefinition[] = [
     passive: {
       id: 'moscowitta',
       name: 'Moscowitta',
-      description: '5% de chance de aplicar Veneno (3 de dano/s por 3s) ao atacar.',
+      description: `${BALANCE.effects.moscowitta.chance}% de chance de aplicar Veneno (${BALANCE.effects.moscowitta.magnitude} de dano/s por ${BALANCE.effects.moscowitta.duration}s) ao atacar.`,
       onHitEffects: [
         {
           kind: 'STATUS',
@@ -61,7 +62,7 @@ export const CHARACTERS: readonly CharacterDefinition[] = [
     passive: {
       id: 'marmita',
       name: 'Marmita',
-      description: 'Regenera +5 HP por segundo, mesmo durante o combate.',
+      description: `Regenera +${BALANCE.effects.marmita.regenPerSecond} HP por segundo, mesmo durante o combate.`,
       hpRegenPerSecond: BALANCE.effects.marmita.regenPerSecond,
     },
   },
@@ -82,7 +83,7 @@ export const CHARACTERS: readonly CharacterDefinition[] = [
     passive: {
       id: 'cigarro',
       name: 'Cigarro',
-      description: '+10% de chance de esquiva.',
+      description: `+${BALANCE.effects.cigarro.bonusDodgeChance}% de chance de esquiva.`,
       statModifiers: { dodgeChance: BALANCE.effects.cigarro.bonusDodgeChance },
     },
   },
@@ -103,7 +104,7 @@ export const CHARACTERS: readonly CharacterDefinition[] = [
     passive: {
       id: 'beckzito',
       name: 'Beckzito',
-      description: '+8% de chance de aplicar Confusão (2s) ao atacar.',
+      description: `+${BALANCE.effects.beckzito.chance}% de chance de aplicar Confusão (${BALANCE.effects.beckzito.duration}s) ao atacar.`,
       onHitEffects: [
         {
           kind: 'STATUS',
@@ -134,7 +135,7 @@ export const CHARACTERS: readonly CharacterDefinition[] = [
     passive: {
       id: 'bomba-quimica',
       name: 'Bomba Química',
-      description: '5% de chance de lançar uma Bomba Química (3 de dano em área) ao atacar.',
+      description: `${BALANCE.effects.bombaQuimica.chance}% de chance de lançar uma Bomba Química (${BALANCE.effects.bombaQuimica.damage} de dano em área) ao atacar.`,
       onHitEffects: [
         {
           kind: 'AOE',

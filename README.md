@@ -40,23 +40,3 @@ O desenvolvimento segue as fases incrementais da SPEC-TECNICA §29:
 | 8 | Testes, GitHub Actions, deploy | ✅ |
 
 \* Áudio é opcional na spec e ficou de fora para manter o projeto sem assets binários.
-
-
-
-## Changelog
-
-O changelog também aparece na tela inicial do jogo (botão "Novidades"); a source-of-truth está incluído em `src/data/changelog.ts`:
-
-- v1.0.0-balance: HP +15-20% e passivas bufadas
-- Ranking: nome só na tela de resultado, obrigatório para publicar; sem "Anônimo"
-- Removido easter egg a pedido
-
-## Publicação (passos manuais)
-
-1. Commit/push para o GitHub (repositório público).
-2. GitHub → Settings → Pages → Source: **GitHub Actions**.
-3. GitHub → Settings → Secrets and variables → Actions → Variables:
-   `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY`.
-4. Banco: siga `SETUP-SUPABASE.md` (rodar `supabase/schema.sql`).
-
-URL esperada: `https://SEU-USUARIO.github.io/tilapia-vs-osasco/`

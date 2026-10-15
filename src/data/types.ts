@@ -141,6 +141,11 @@ export interface EquipmentDefinition {
   color: string;
   /** false = não acumula consigo mesmo (ex.: Marmita Premium). */
   stackable: boolean;
+  /**
+   * Raridade (v1.2.0): itens lendários são mais fortes e só aparecem por
+   * chance — na recompensa pós-boss ou ao subir de nível.
+   */
+  rarity?: 'comum' | 'lendario';
 
   /** Modificadores percentuais multiplicativos aplicados ao equipar. */
   statPercents?: Partial<Record<keyof Stats, number>>;

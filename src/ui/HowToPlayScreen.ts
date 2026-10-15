@@ -8,6 +8,7 @@ const HOW_TO_PLAY_ITEMS: readonly string[] = [
   'Sobreviva às 3 fases: Matão, Ruas de Osasco e Toca.',
   'Pontos só por inimigos derrotados: quanto mais tempo vivo, maior o multiplicador!',
   'Ao subir de nível, o time cura por completo — e um personagem morto renasce!',
+  'Subir de nível ou derrotar o boss pode render um item LENDÁRIO ★',
 ];
 
 /** Tela "Como Jogar" (SPEC-JOGO §12/§13). */

@@ -250,6 +250,25 @@ h2.screen__title {
   color: var(--char-color);
 }
 
+/* Item lendário (v1.2.0): moldura e selo dourados */
+.equip-card--lendario {
+  border-color: rgba(255, 215, 0, 0.8);
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.25);
+}
+
+.equip-card--lendario:hover {
+  border-color: #ffd700;
+  box-shadow: 0 0 14px rgba(255, 215, 0, 0.45);
+}
+
+.equip-card__badge {
+  font-size: 0.68rem;
+  font-weight: bold;
+  letter-spacing: 0.18em;
+  color: #ffd700;
+  text-shadow: 0 0 6px rgba(255, 215, 0, 0.6);
+}
+
 .char-card:disabled {
   opacity: 0.45;
   cursor: not-allowed;

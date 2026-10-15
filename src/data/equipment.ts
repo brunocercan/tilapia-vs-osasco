@@ -2,9 +2,11 @@ import { StatusEffectType } from '../entities/StatusEffect';
 import type { EquipmentDefinition } from './types';
 
 /**
- * Os 18 equipamentos (SPEC-JOGO §4 — 6 originais + 12 novos).
+ * Os equipamentos (SPEC-JOGO §4): 18 comuns + 6 lendários (v1.2.0).
  * Tudo como dados; gatilhos interpretados pelo EquipmentSystem.
  * Regras §5: Marmita Premium não acumula; tetos globais aplicados no equip.
+ * Lendários são mais fortes e só surgem por chance: level up (auto-equip)
+ * ou como opção na recompensa pós-boss.
  */
 export const EQUIPMENTS: readonly EquipmentDefinition[] = [
   {
@@ -178,8 +180,87 @@ export const EQUIPMENTS: readonly EquipmentDefinition[] = [
     stackable: true,
     statPercents: { maxHp: -5, damage: 15 },
   },
+
+  // ---------- Lendários (v1.2.0): chance no level up e ao derrotar o boss ----------
+
+  {
+    id: 'marmita-avo',
+    name: 'Marmita da Avó',
+    description: '+20% HP máximo, +6 HP/s de regeneração. Não acumula consigo mesma.',
+    color: '#ffd700',
+    stackable: false,
+    rarity: 'lendario',
+    statPercents: { maxHp: 20 },
+    hpRegenPerSecond: 6,
+  },
+  {
+    id: 'pc-tianrao',
+    name: 'PC do Tianrão',
+    description: '+25% dano, +10% vel. de ataque. A máquina definitiva.',
+    color: '#ff6ec7',
+    stackable: true,
+    rarity: 'lendario',
+    statPercents: { damage: 25, attackSpeed: 10 },
+  },
+  {
+    id: 'chinelo-bumerangue',
+    name: 'Chinelo Bumerangue',
+    description: '+10% alcance, 12% de chance de atordoar por 1s ao acertar.',
+    color: '#00e5ff',
+    stackable: true,
+    rarity: 'lendario',
+    statPercents: { range: 10 },
+    onHitEffects: [
+      {
+        kind: 'STATUS',
+        chance: 12,
+        effect: { type: StatusEffectType.Stun, duration: 1, magnitude: 0 },
+      },
+    ],
+  },
+  {
+    id: 'corote-fim-de-ano',
+    name: 'Corote de Fim de Ano',
+    description: '+15% de chance de crítico; críticos causam +75% de dano.',
+    color: '#ff4757',
+    stackable: true,
+    rarity: 'lendario',
+    chancePoints: { critChance: 15 },
+    critMultiplierBonus: 0.75,
+  },
+  {
+    id: 'tennis-furacao',
+    name: 'Tênis do Furacão',
+    description: '+15% esquiva, +15% vel. de movimento. Ao esquivar: +20% vel. de ataque por 3s.',
+    color: '#7cff6b',
+    stackable: true,
+    rarity: 'lendario',
+    statPercents: { moveSpeed: 15 },
+    chancePoints: { dodgeChance: 15 },
+    onDodgeAttackSpeedBuff: { percent: 20, durationSeconds: 3 },
+  },
+  {
+    id: 'colar-tilapia',
+    name: 'Colar do Grupo Tilápia',
+    description: '+25% de pontuação por inimigo derrotado, +5% vel. de movimento.',
+    color: '#ffd700',
+    stackable: true,
+    rarity: 'lendario',
+    statPercents: { moveSpeed: 5 },
+    scoreKillBonusPercent: 25,
+  },
 ];
 
 export const EQUIPMENT_BY_ID: ReadonlyMap<string, EquipmentDefinition> = new Map(
   EQUIPMENTS.map((equipment) => [equipment.id, equipment]),
+);
+
+/** Itens comuns: pool das recompensas normais pós-boss. */
+export const COMMON_EQUIPMENTS: readonly EquipmentDefinition[] = EQUIPMENTS.filter(
+  (equipment) => equipment.rarity !== 'lendario',
+);
+
+/** Itens lendários: mais fortes, surgem por chance (level up / boss). */
+export const LEGENDARY_EQUIPMENTS: readonly EquipmentDefinition[] = EQUIPMENTS.filter(
+  (equipment) => equipment.rarity === 'lendario',
 );

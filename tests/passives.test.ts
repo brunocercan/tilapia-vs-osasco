@@ -18,11 +18,11 @@ const charById = (id: string) => {
 };
 
 describe('Passivas dos personagens (SPEC-JOGO §3)', () => {
-  it('Moscowitta (Kiki): 5% de chance de Veneno, 3 dano/s por 3s', () => {
+  it('Moscowitta (Kiki): 7% de chance de Veneno, 3 dano/s por 3s', () => {
     const kiki = createPlayerFighter(charById('kiki'));
     const veneno = kiki.onHitEffects.find((e) => e.kind === 'STATUS');
     expect(veneno).toBeDefined();
-    expect(veneno?.chance).toBe(BALANCE.effects.moscowitta.chance); // 5
+    expect(veneno?.chance).toBe(BALANCE.effects.moscowitta.chance); // 7
     if (veneno?.kind === 'STATUS') {
       expect(veneno.effect.type).toBe(StatusEffectType.Poison);
       expect(veneno.effect.duration).toBe(3);
@@ -30,20 +30,20 @@ describe('Passivas dos personagens (SPEC-JOGO §3)', () => {
     }
   });
 
-  it('Cigarro (Veronezio): +5% de esquiva', () => {
+  it('Cigarro (Veronezio): +12% de esquiva', () => {
     const veronezio = createPlayerFighter(charById('veronezio'));
     expect(veronezio.stats.dodgeChance).toBe(
       charById('veronezio').baseStats.dodgeChance + BALANCE.effects.cigarro.bonusDodgeChance,
     );
   });
 
-  it('Marmita (Tombas): regenera +5 HP por segundo, sem ultrapassar o máximo', () => {
+  it('Marmita (Tombas): regenera +6 HP por segundo, sem ultrapassar o máximo', () => {
     const tombas = createPlayerFighter(charById('tombas'));
     tombas.hp = 50;
     const system = new PassiveSystem();
 
-    system.update([tombas], 1.0); // 1s → acumula 5 → cura 5
-    expect(tombas.hp).toBe(55);
+    system.update([tombas], 1.0); // 1s → acumula 6 → cura 6
+    expect(tombas.hp).toBe(56);
 
     tombas.hp = tombas.stats.maxHp - 1;
     system.update([tombas], 1.0); // cura limitada ao máximo

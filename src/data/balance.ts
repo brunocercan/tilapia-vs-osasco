@@ -31,20 +31,24 @@ export const BALANCE = {
     capivaraKnockback: { chance: 10, distancePx: 80 },
 
     /**
-     * Passivas dos personagens (SPEC-JOGO §3), rebalanceado em out/2026:
-     * buffs de compensação de dificuldade — o jogo estava difícil.
+     * Passivas dos personagens (SPEC-JOGO §3), 2ª rodada de buffs (v1.2.0,
+     * out/2026): +~15% nos números principais — o jogo continuava difícil.
      * HP dos personagens acompanham os stats em characters.ts.
      */
-    moscowitta: { chance: 6, duration: 3, tickInterval: 1, magnitude: 3 },
-    marmita: { regenPerSecond: 5 },
-    cigarro: { bonusDodgeChance: 10 },
-    beckzito: { chance: 8, duration: 2 },
-    bombaQuimica: { chance: 5, damage: 4, radiusPx: 70 },
+    moscowitta: { chance: 7, duration: 3, tickInterval: 1, magnitude: 3 },
+    marmita: { regenPerSecond: 6 },
+    cigarro: { bonusDodgeChance: 12 },
+    beckzito: { chance: 9, duration: 2 },
+    bombaQuimica: { chance: 6, damage: 4, radiusPx: 70 },
   },
 
   equipment: {
     /** Slots por personagem (SPEC-JOGO §4). */
     maxSlots: 2,
+    /** Chance (%) de uma opção lendária aparecer na recompensa pós-boss. */
+    legendaryChanceOnBoss: 35,
+    /** Chance (%) de ganhar um item lendário direto ao subir de nível. */
+    legendaryChanceOnLevelUp: 15,
   },
 
   /**

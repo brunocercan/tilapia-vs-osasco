@@ -3,6 +3,8 @@
  * Exibido na tela inicial ("Ver novidades").
  */
 export const CHANGELOG: readonly string[] = [
+  'v1.2.0: itens LENDÁRIOS ★ — chance ao subir de nível ou derrotar o boss',
+  'v1.2.0: passivas dos personagens +~15% (jogo ainda estava difícil)',
   'v1.1.0: score só por inimigos derrotados × multiplicador de sobrevivência (+0,1/min vivo)',
   'v1.1.0: level up cura a vida total e renasce personagem morto',
   'v1.1.0: corrigido envio ao ranking (nome digitado não chegava ao jogo)',

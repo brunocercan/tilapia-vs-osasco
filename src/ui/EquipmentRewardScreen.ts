@@ -58,6 +58,9 @@ export class EquipmentRewardScreen extends BaseScreen {
       const card = document.createElement('button');
       card.className = 'char-card equip-card';
       card.style.setProperty('--char-color', option.color);
+      if (option.rarity === 'lendario') {
+        card.classList.add('equip-card--lendario');
+      }
 
       const name = document.createElement('span');
       name.className = 'char-card__name';
@@ -66,6 +69,13 @@ export class EquipmentRewardScreen extends BaseScreen {
       desc.className = 'char-card__passive';
       desc.textContent = option.description;
       card.append(name, desc);
+
+      if (option.rarity === 'lendario') {
+        const badge = document.createElement('span');
+        badge.className = 'equip-card__badge';
+        badge.textContent = '★ LENDÁRIO';
+        card.append(badge);
+      }
 
       card.addEventListener('click', () => this.renderAssignStep(option));
       this.optionContainer.append(card);

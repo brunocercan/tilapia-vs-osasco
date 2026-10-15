@@ -4,7 +4,7 @@ import { StatusEffectSystem } from '../src/systems/StatusEffectSystem';
 import { PassiveSystem } from '../src/systems/PassiveSystem';
 import { rollAttack } from '../src/systems/CombatSystem';
 import { StatusEffectType } from '../src/entities/StatusEffect';
-import { EQUIPMENTS, EQUIPMENT_BY_ID } from '../src/data/equipment';
+import { COMMON_EQUIPMENTS, EQUIPMENTS, EQUIPMENT_BY_ID, LEGENDARY_EQUIPMENTS } from '../src/data/equipment';
 import { RandomService } from '../src/services/RandomService';
 import { CHARACTERS } from '../src/data/characters';
 import { createPlayerFighter } from '../src/entities/fighterFactory';
@@ -19,9 +19,20 @@ function kiki() {
   return createPlayerFighter(CHARACTERS[0]);
 }
 
+/** Conta quantas opções são lendárias. */
+function contarLendarios(options: ReturnType<typeof EquipmentSystem.rollOptions>): number {
+  return options.filter((option) => option.rarity === 'lendario').length;
+}
+
 describe('Catálogo de equipamentos (SPEC-JOGO §4/§14)', () => {
-  it('possui os 18 equipamentos da especificação', () => {
-    expect(EQUIPMENTS).toHaveLength(18);
+  it('possui 24 equipamentos: 18 comuns + 6 lendários (v1.2.0)', () => {
+    expect(EQUIPMENTS).toHaveLength(24);
+    expect(COMMON_EQUIPMENTS).toHaveLength(18);
+    expect(LEGENDARY_EQUIPMENTS).toHaveLength(6);
+    for (const legendary of LEGENDARY_EQUIPMENTS) {
+      expect(legendary.rarity).toBe('lendario');
+      expect(EQUIPMENTS).toContain(legendary);
+    }
   });
 
   it('sorteia 2 opções distintas de recompensa', () => {
@@ -31,6 +42,39 @@ describe('Catálogo de equipamentos (SPEC-JOGO §4/§14)', () => {
     for (const option of options) {
       expect(EQUIPMENTS).toContain(option);
     }
+  });
+
+  it('recompensa de boss pode incluir um lendário (35% de chance)', () => {
+    // RNG viciado em valores baixos: chance rola e o 1º lendário é escolhido
+    const sortudo = EquipmentSystem.rollOptions(new RandomService(() => 0));
+    expect(contarLendarios(sortudo)).toBeGreaterThan(0);
+
+    // RNG viciado em valores altos: chance não rola, só itens comuns
+    const azarado = EquipmentSystem.rollOptions(new RandomService(() => 0.99));
+    expect(contarLendarios(azarado)).toBe(0);
+    for (const option of azarado) {
+      expect(option.rarity).not.toBe('lendario');
+    }
+  });
+
+  it('rollLegendary: 15% de chance por nível ganho', () => {
+    expect(EquipmentSystem.rollLegendary(new RandomService(() => 0))).not.toBeNull();
+    const nenhum = EquipmentSystem.rollLegendary(new RandomService(() => 0.99));
+    expect(nenhum).toBeNull();
+  });
+
+  it('lendários são mais fortes: PC do Tianrão dá +25% dano e +10% vel. de ataque', () => {
+    const fighter = kiki(); // dano base 10, vel. ataque 1.0
+    EquipmentSystem.apply(fighter, equip('pc-tianrao'));
+    expect(fighter.stats.damage).toBeCloseTo(10 * 1.25, 3);
+    expect(fighter.stats.attackSpeed).toBeCloseTo(1.0 * 1.10, 3);
+  });
+
+  it('Marmita da Avó não acumula consigo mesma', () => {
+    const fighter = kiki();
+    expect(EquipmentSystem.apply(fighter, equip('marmita-avo'))).not.toBeNull();
+    expect(EquipmentSystem.apply(fighter, equip('marmita-avo'))).toBeNull();
+    expect(fighter.equipped).toHaveLength(1);
   });
 });
 

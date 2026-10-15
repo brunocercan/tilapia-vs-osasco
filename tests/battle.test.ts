@@ -5,6 +5,7 @@ import { RunState } from '../src/entities/RunState';
 import { CHARACTERS } from '../src/data/characters';
 import { PHASES } from '../src/data/phases';
 import { ExperienceSystem } from '../src/systems/ExperienceSystem';
+import { LEGENDARY_EQUIPMENTS } from '../src/data/equipment';
 import type { Fighter } from '../src/entities/Fighter';
 
 function simulateBattle(random: RandomService): { result: BattleResult | null; runState: RunState } {
@@ -77,5 +78,47 @@ describe('BattleScene — level up cura e renasce o time', () => {
     // Morto renasce com vida cheia
     expect(players[1].alive).toBe(true);
     expect(players[1].hp).toBe(players[1].stats.maxHp);
+  });
+
+  it('subir de nível pode render um item lendário, equipado e persistido na run', () => {
+    const runState = new RunState();
+    const scene = new BattleScene(
+      [CHARACTERS[0], CHARACTERS[1]],
+      PHASES[0],
+      new RandomService(() => 0.01), // chance(15) sempre rola
+      runState,
+      () => {},
+    );
+    scene.layout(800, 600);
+
+    ExperienceSystem.grantXp(runState, ExperienceSystem.xpForNextLevel(1)); // nível 2
+    (scene as unknown as { applyLevelUp: () => void }).applyLevelUp();
+
+    const legendaryIds = new Set(LEGENDARY_EQUIPMENTS.map((e) => e.id));
+    const granted = [...runState.equipmentIds.values()].flat();
+    expect(granted.some((id) => legendaryIds.has(id))).toBe(true);
+
+    // Auto-equipado no personagem com menos itens (aqui: o 1º, Kiki)
+    const players: Fighter[] = (scene as unknown as { fighters: Fighter[] }).fighters
+      .filter((f) => f.team === 'PLAYER');
+    expect(players[0].equipped).toHaveLength(1);
+    expect(legendaryIds.has(players[0].equipped[0].definition.id)).toBe(true);
+  });
+
+  it('com a chance falhando, subir de nível não dá item lendário', () => {
+    const runState = new RunState();
+    const scene = new BattleScene(
+      [CHARACTERS[0], CHARACTERS[1]],
+      PHASES[0],
+      new RandomService(() => 0.99), // chance(15) nunca rola
+      runState,
+      () => {},
+    );
+    scene.layout(800, 600);
+
+    ExperienceSystem.grantXp(runState, ExperienceSystem.xpForNextLevel(1));
+    (scene as unknown as { applyLevelUp: () => void }).applyLevelUp();
+
+    expect([...runState.equipmentIds.values()].flat()).toHaveLength(0);
   });
 });
