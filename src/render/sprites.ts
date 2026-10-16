@@ -8,6 +8,10 @@
  * - Veronezio: cabelo curto, óculos retangular, blazer azul-marinho
  * - Marcola:   óculos redondo, barba ruiva, terno com gravata
  * - Mattioni:  cabelo bagunçado, óculos redondo, jaqueta jeans
+ * - Gabsmanolo: cabelo bagunçado, barba curta, camiseta vermelha de
+ *               pizzaria com fatia de pizza no peito (v1.7.0 — a IA não
+ *               consegue ver /Source-Images/Gabsmanolo.png; ajuste as
+ *               cores da spec conforme a referência)
  *
  * Animações (idle/walk/attack/hit) são transformações procedurais
  * (balanço, avanço do braço), condizente com "poucos frames".
@@ -28,6 +32,8 @@ interface CharacterSpriteSpec {
   pants: string;
   tie?: string;
   plaidAccent?: string;
+  /** Fatia de pizza no peito da camisa (Gabsmanolo, v1.7.0). */
+  pizza?: boolean;
 }
 
 const CHARACTER_SPECS: Record<string, CharacterSpriteSpec> = {
@@ -90,6 +96,18 @@ const CHARACTER_SPECS: Record<string, CharacterSpriteSpec> = {
     shirt: '#15171a',
     jacket: '#3f5c7a',
     pants: '#26282d',
+  },
+  gabsmanolo: {
+    skin: '#e6b088',
+    hair: '#2a1d12',
+    hairStyle: 'messy',
+    beardStyle: 'short',
+    beard: '#241a12',
+    glasses: 'none',
+    glassesColor: '#000',
+    shirt: '#b02e2e', // camiseta vermelha de pizzaria
+    pizza: true,
+    pants: '#2b2b30',
   },
 };
 
@@ -233,6 +251,14 @@ export function drawCharacterSprite(
   }
   if (spec.tie) {
     P(7, 12, 2, 4, spec.tie);
+  }
+  if (spec.pizza) {
+    // Gabsmanolo: fatia de pizza no peito (borda, queijo e calabresa)
+    P(6, 13, 4, 1, '#d1a054'); // borda dourada
+    P(6, 14, 4, 1, '#f2c14e'); // queijo
+    P(7, 15, 3, 1, '#f2c14e');
+    P(7, 16, 2, 1, '#f2c14e'); // ponta da fatia
+    P(7, 14, 1, 1, '#b03a2e'); // calabresa
   }
 
   // braço de ataque: estende para frente

@@ -133,18 +133,19 @@ export class CombatSystem {
           onEvent?.({ x: target.x, y: target.y - 44, text: 'EMPURRÃO', color: 'rgba(255, 160, 90, 1)' });
         }
       } else {
-        // AOE (Bomba Química — SPEC-JOGO §3): dano em todos os adversários do
-        // atacante dentro do raio, ao redor do alvo atingido.
+        // AOE (Bomba Química — §3 / Pizzacrek — Gabsmanolo, v1.7.0): dano em
+        // todos os adversários do atacante dentro do raio, ao redor do alvo.
+        const aoeColor = onHit.eventColor ?? 'rgba(255, 140, 60, 1)';
         for (const other of fighters) {
           if (other.team === attacker.team || !other.alive) {
             continue;
           }
           if (Math.abs(other.x - target.x) <= onHit.radiusPx) {
             other.hp = Math.max(0, other.hp - onHit.damage);
-            onEvent?.({ x: other.x, y: other.y - 34, text: `${onHit.damage}`, color: 'rgba(255, 140, 60, 1)' });
+            onEvent?.({ x: other.x, y: other.y - 34, text: `${onHit.damage}`, color: aoeColor });
           }
         }
-        onEvent?.({ x: target.x, y: target.y, text: '', color: 'rgba(255, 140, 60, 1)', aoeRadiusPx: onHit.radiusPx });
+        onEvent?.({ x: target.x, y: target.y, text: '', color: aoeColor, aoeRadiusPx: onHit.radiusPx });
       }
     }
   }

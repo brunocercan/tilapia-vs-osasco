@@ -25,7 +25,11 @@ export interface Stats {
 export type OnHitEffectDefinition =
   | { kind: 'STATUS'; chance: number; effect: StatusEffectSpec }
   | { kind: 'KNOCKBACK'; chance: number; distancePx: number }
-  | { kind: 'AOE'; chance: number; damage: number; radiusPx: number };
+  /**
+   * AOE: dano em área ao redor do alvo. `eventColor` muda a cor da
+   * explosão/dano (Pizzacrek do Gabsmanolo usa marrom — v1.7.0).
+   */
+  | { kind: 'AOE'; chance: number; damage: number; radiusPx: number; eventColor?: string };
 
 export interface UnitDefinition {
   id: string;

@@ -43,6 +43,8 @@ export const BALANCE = {
     cigarro: { bonusDodgeChance: 15 },
     beckzito: { chance: 16, duration: 2 },
     bombaQuimica: { chance: 16, damage: 4, radiusPx: 70 },
+    /** Gabsmanolo (v1.7.0): cocozinho — dano em área frequente e modesto. */
+    pizzacrek: { chance: 20, damage: 3, radiusPx: 45 },
   },
 
   equipment: {

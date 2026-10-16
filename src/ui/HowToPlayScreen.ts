@@ -1,7 +1,7 @@
 import { BaseScreen, createButton, createTitle } from './Screen';
 
 const HOW_TO_PLAY_ITEMS: readonly string[] = [
-  'Escolha 2 dos 5 amigos do grupo Tilápia.',
+  'Escolha 2 dos 6 amigos do grupo Tilápia.',
   'O combate é 100% automático — seu time luta sozinho.',
   'Vença os inimigos de cada fase e derrote o boss.',
   'A cada boss derrotado, escolha 1 entre 2 equipamentos.',

@@ -158,4 +158,57 @@ describe('Passivas dos personagens (SPEC-JOGO §3)', () => {
     expect(pertoDoAlvo.hp).toBe(pertoDoAlvo.stats.maxHp - BALANCE.effects.bombaQuimica.damage); // só a bomba
     expect(longe.hp).toBe(longe.stats.maxHp); // fora do raio: ileso
   });
+
+  it('Pizzacrek (Gabsmanolo): 20% de chance de cocozinho com dano em área (v1.7.0)', () => {
+    const gabs = createPlayerFighter(charById('gabsmanolo'));
+
+    // Stats definidos na v1.7.0
+    expect(gabs.stats.maxHp).toBe(120);
+    expect(gabs.stats.damage).toBe(10);
+    expect(gabs.stats.attackSpeed).toBe(1.0);
+    expect(gabs.stats.range).toBe(60); // o maior alcance: é o arremessador
+    expect(gabs.stats.defense).toBe(4);
+    expect(gabs.stats.critChance).toBe(10);
+    expect(gabs.stats.dodgeChance).toBe(7);
+    expect(gabs.stats.moveSpeed).toBe(105);
+
+    // Passiva AOE com a chance e o dano do BALANCE
+    const coco = gabs.onHitEffects.find((e) => e.kind === 'AOE');
+    expect(coco).toBeDefined();
+    expect(coco?.chance).toBe(BALANCE.effects.pizzacrek.chance);
+    if (coco?.kind === 'AOE') {
+      expect(coco.damage).toBe(BALANCE.effects.pizzacrek.damage);
+      expect(coco.radiusPx).toBe(BALANCE.effects.pizzacrek.radiusPx);
+    }
+  });
+
+  it('Pizzacrek: o cocozinho respinga nos inimigos próximos ao alvo', () => {
+    // 100% de chance para teste determinístico, mesmo caminho da Bomba
+    const cocoCerto = new Fighter(
+      charById('gabsmanolo'),
+      'PLAYER',
+      'player-coco',
+      {
+        onHitEffects: [
+          { kind: 'AOE', chance: 100, damage: BALANCE.effects.pizzacrek.damage, radiusPx: BALANCE.effects.pizzacrek.radiusPx },
+        ],
+      },
+    );
+    cocoCerto.x = 100;
+
+    const alvo = new Fighter(CAPIVARA_NERVOSA, 'ENEMY', 'e-1');
+    alvo.x = 100 + cocoCerto.stats.range;
+    const pertoDoAlvo = new Fighter(PERNILONGO, 'ENEMY', 'e-2');
+    pertoDoAlvo.x = alvo.x + 30; // dentro do respingo
+    const longe = new Fighter(PERNILONGO, 'ENEMY', 'e-3');
+    longe.x = alvo.x + 300; // fora do raio
+
+    const fighters = [cocoCerto, alvo, pertoDoAlvo, longe];
+    new MovementSystem().update(fighters, 0, { minX: 16, maxX: 2000 });
+    new CombatSystem(new RandomService(() => 0.99)).update(fighters, 0.001);
+
+    expect(alvo.hp).toBeLessThan(alvo.stats.maxHp); // ataque + cocozinho
+    expect(pertoDoAlvo.hp).toBe(pertoDoAlvo.stats.maxHp - BALANCE.effects.pizzacrek.damage);
+    expect(longe.hp).toBe(longe.stats.maxHp); // fora do respingo: ileso
+  });
 });

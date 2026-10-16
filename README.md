@@ -1,8 +1,8 @@
 # Tilapia vs Osasco
 
-Auto battler 2D web do grupo Tilápia. Escolha 2 dos 5 amigos, monte o time com
+Auto battler 2D web do grupo Tilápia. Escolha 2 dos 6 amigos, monte o time com
 equipamentos e sobreviva às 3 fases: **Matão**, **Ruas de Osasco** e **Toca**.
-Combate 100% automático — runs de ~5 minutos e ranking online.
+Combate 100% automático — runs de ~5 minutos, modo infinito e ranking online.
 
 ## Stack
 
@@ -32,7 +32,7 @@ O desenvolvimento segue as fases incrementais da SPEC-TECNICA §29:
 | ---- | -------- | ------ |
 | 1 | Vite, TypeScript, Canvas, game loop, tela inicial | ✅ |
 | 2 | Personagens, movimentação automática, inimigo, combate | ✅ |
-| 3 | XP, níveis, 5 personagens, passivas | ✅ |
+| 3 | XP, níveis, 6 personagens, passivas | ✅ |
 | 4 | Equipamentos, slots, tela de recompensa | ✅ |
 | 5 | 3 fases, bosses, escalonamento | ✅ |
 | 6 | Score, Supabase, ranking | ✅ |

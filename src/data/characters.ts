@@ -3,13 +3,14 @@ import { BALANCE } from './balance';
 import type { CharacterDefinition } from './types';
 
 /**
- * Os 5 amigos do grupo Tilápia (SPEC-JOGO §3).
+ * Os 6 amigos do grupo Tilápia (SPEC-JOGO §3).
  * Passivas são dados com parte descritiva (UI) e mecânica (sistemas):
  * - Moscowitta (Kiki): 17% de chance de Veneno (3 dano/s por 3s)
  * - Marmita (Tombas): a cada 8s, regenera +6 HP/s por 3s (v1.5.0)
  * - Cigarro (Veronezio): +15% de esquiva
  * - Beckzito (Marcola): +16% de chance de Confusão (2s)
  * - Bomba Química (Mattioni): 16% de chance de dano em área
+ * - Pizzacrek (Gabsmanolo): 20% de chance de cocozinho (3 de dano em área)
  *
  * v1.5.0: Tombas nerfado (HP 140→110; regen constante→janela periódica);
  * os outros 4 personagens ganharam +15% em todos os stats base.
@@ -149,6 +150,35 @@ export const CHARACTERS: readonly CharacterDefinition[] = [
           chance: BALANCE.effects.bombaQuimica.chance,
           damage: BALANCE.effects.bombaQuimica.damage,
           radiusPx: BALANCE.effects.bombaQuimica.radiusPx,
+        },
+      ],
+    },
+  },
+  {
+    id: 'gabsmanolo',
+    name: 'Gabsmanolo',
+    color: '#d35400',
+    baseStats: {
+      maxHp: 120,
+      damage: 10,
+      attackSpeed: 1.0,
+      range: 60, // o mais longe do grupo: arremesso de cocozinho
+      defense: 4,
+      critChance: 10,
+      dodgeChance: 7,
+      moveSpeed: 105,
+    },
+    passive: {
+      id: 'pizzacrek',
+      name: 'Pizzacrek',
+      description: `${BALANCE.effects.pizzacrek.chance}% de chance de jogar cocozinho nos inimigos ao atacar (${BALANCE.effects.pizzacrek.damage} de dano em área).`,
+      onHitEffects: [
+        {
+          kind: 'AOE',
+          chance: BALANCE.effects.pizzacrek.chance,
+          damage: BALANCE.effects.pizzacrek.damage,
+          radiusPx: BALANCE.effects.pizzacrek.radiusPx,
+          eventColor: 'rgba(139, 90, 43, 1)', // respingo marrom 💩
         },
       ],
     },

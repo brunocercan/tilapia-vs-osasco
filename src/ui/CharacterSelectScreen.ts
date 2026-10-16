@@ -15,7 +15,7 @@ const STAT_LABELS: ReadonlyArray<[keyof CharacterDefinition['baseStats'], string
 ];
 
 /**
- * Tela de seleção (SPEC-JOGO §12): 5 personagens, seleção de 2,
+ * Tela de seleção (SPEC-JOGO §12): personagens, seleção de 2,
  * descrição das passivas e botão Iniciar Run.
  * O nome do jogador é informado apenas na tela de resultado (§11).
  */
