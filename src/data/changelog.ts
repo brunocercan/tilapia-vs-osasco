@@ -4,6 +4,7 @@
  * entradas aparecem, mas o histórico completo fica registrado aqui.
  */
 export const CHANGELOG: readonly string[] = [
+  'v1.8.0: 🎃 tema HALLOWEEN nos menus — noite índigo, abóboras e morcegos (baseado na halloween.jpg)',
   'v1.7.0: novo personagem GABSMANOLO ★ — passiva Pizzacrek joga cocozinho nos inimigos!',
   'v1.6.2: tilápia pixel art como ícone da aba e favorito ★',
   'v1.6.1: segurança do rank — envio passa por validação no servidor (Edge Function); apikey não grava mais direto',

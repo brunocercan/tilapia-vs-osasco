@@ -1,11 +1,27 @@
 /* Tilapia vs Osasco — estilos globais e menus (Fase 1) */
 
+/* ============================================================
+   TEMA HALLOWEEN (v1.8.0) — paleta extraída programaticamente de
+   Source-Images/halloween.jpg: noite índigo (#202040/#000020)
+   com abóboras laranja (#F078xx). Depois da temporada, restaure o
+   bloco original abaixo e remova a seção de decorações no fim:
+
+   :root {
+     --color-bg: #0d160f;
+     --color-fg: #e8f0e0;
+     --color-accent: #7ec850;
+     --color-accent-dark: #3f6b28;
+     --color-panel: rgba(16, 28, 18, 0.9);
+     --font-stack: 'Courier New', ui-monospace, monospace;
+   }
+   ============================================================ */
+
 :root {
-  --color-bg: #0d160f;
-  --color-fg: #e8f0e0;
-  --color-accent: #7ec850;
-  --color-accent-dark: #3f6b28;
-  --color-panel: rgba(16, 28, 18, 0.9);
+  --color-bg: #0d0d20;          /* céu da noite da imagem */
+  --color-fg: #e8e4f0;          /* luar pálido */
+  --color-accent: #f07830;      /* abóbora */
+  --color-accent-dark: #914a1e; /* abóbora escura */
+  --color-panel: rgba(32, 32, 64, 0.92); /* índigo translúcido (#202040) */
   --font-stack: 'Courier New', ui-monospace, monospace;
 }
 
@@ -386,4 +402,105 @@ h2.screen__title {
 .btn--continue {
   background: var(--color-accent);
   font-weight: bold;
+}
+
+/* ============================================================
+   TEMA HALLOWEEN — decorações (v1.8.0)
+   Abóbora e morcego pixel art (public/halloween-*.svg) nos menus,
+   com flicker de vela no título. A paleta veio da seção :root acima.
+   ============================================================ */
+
+.screen--menu {
+  position: relative;
+}
+
+/* abóbora no canto inferior esquerdo */
+.screen--menu::before {
+  content: '';
+  position: absolute;
+  left: clamp(0.5rem, 4vw, 3rem);
+  bottom: clamp(0.5rem, 4vh, 2rem);
+  width: clamp(48px, 9vw, 72px);
+  height: clamp(48px, 9vw, 72px);
+  background: url('/halloween-pumpkin.svg') no-repeat center / contain;
+  image-rendering: pixelated;
+  pointer-events: none;
+  animation: pumpkinBreathe 3.2s ease-in-out infinite;
+}
+
+/* morcego flutuando no canto superior direito */
+.screen--menu::after {
+  content: '';
+  position: absolute;
+  right: clamp(0.5rem, 4vw, 3rem);
+  top: clamp(0.5rem, 4vh, 2rem);
+  width: clamp(40px, 7vw, 56px);
+  height: clamp(25px, 4.5vw, 35px);
+  background: url('/halloween-bat.svg') no-repeat center / contain;
+  image-rendering: pixelated;
+  pointer-events: none;
+  animation: batFloat 2.8s ease-in-out infinite;
+}
+
+/* título à luz de vela: pulso sutil de luminosidade */
+.screen--menu .screen__title {
+  animation: candleFlicker 2.4s ease-in-out infinite;
+}
+
+/* morcego pequeno flutuando nas demais telas de menu */
+.screen--howto::before,
+.screen--changelog::before,
+.screen--leaderboard::before {
+  content: '';
+  position: absolute;
+  right: clamp(0.5rem, 3vw, 1.5rem);
+  bottom: clamp(0.5rem, 3vh, 1.5rem);
+  width: 32px;
+  height: 20px;
+  background: url('/halloween-bat.svg') no-repeat center / contain;
+  image-rendering: pixelated;
+  opacity: 0.6;
+  pointer-events: none;
+  animation: batFloat 3.4s ease-in-out infinite;
+}
+
+.screen--howto,
+.screen--changelog,
+.screen--leaderboard {
+  position: relative;
+}
+
+@keyframes batFloat {
+  0%, 100% {
+    transform: translateY(0) rotate(-2deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(2deg);
+  }
+}
+
+@keyframes pumpkinBreathe {
+  0%, 100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  50% {
+    transform: scale(1.03);
+    filter: brightness(1.15);
+  }
+}
+
+@keyframes candleFlicker {
+  0%, 100% {
+    filter: brightness(1);
+  }
+  40% {
+    filter: brightness(1.1);
+  }
+  55% {
+    filter: brightness(0.93);
+  }
+  70% {
+    filter: brightness(1.06);
+  }
 }
